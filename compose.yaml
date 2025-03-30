@@ -1,0 +1,43 @@
+services:
+    database:
+        image: pgvector/pgvector:pg17
+        container_name: postgres
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: thesis
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
+        networks:
+            - postgres
+
+    server:
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+            target: development
+        image: server
+        container_name: server
+        volumes:
+            - ./server/:/usr/server/
+            - ./server/package.json:/usr/server/package.json
+            - ./server/package-lock.json:/usr/server/package-lock.json
+            - server:/usr/server/node_modules
+            - server-uploads:/usr/server/uploads
+        ports:
+            - 3000:3000
+        networks:
+            - postgres
+        depends_on:
+            - database
+
+volumes:
+    server:
+    server-uploads:
+    pgdata:
+
+networks:
+    postgres:
+        driver: bridge
