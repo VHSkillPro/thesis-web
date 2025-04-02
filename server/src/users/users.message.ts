@@ -4,4 +4,7 @@ export class UsersMessage {
 
   static readonly FIND_ONE_SUCCESS = 'Lấy thông tin người dùng thành công';
   static readonly USER_NOT_FOUND = 'Người dùng không tồn tại';
+
+  static readonly CREATE_SUCCESS = 'Tạo người dùng thành công';
+  static readonly USER_EXISTS = 'Người dùng đã tồn tại';
 }

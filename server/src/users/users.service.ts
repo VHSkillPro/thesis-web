@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Like, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersFilterDto } from './dto/user-filter.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UsersMessage } from './users.message';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -78,5 +81,31 @@ export class UsersService {
         username,
       },
     });
+  }
+
+  /**
+   * Creates a new user in the system.
+   *
+   * @param createUserDto - Data Transfer Object containing the details of the user to be created.
+   * @returns A promise that resolves to the result of the user insertion operation.
+   * @throws {BadRequestException} If a user with the given username already exists.
+   */
+  async create(createUserDto: CreateUserDto) {
+    const { username, password } = createUserDto;
+
+    if (await this.findOne(username)) {
+      throw new BadRequestException({ message: UsersMessage.USER_EXISTS });
+    }
+
+    const saltOrRounds = 10;
+    const hashPassword = bcrypt.hashSync(password, saltOrRounds);
+
+    const user = new User();
+    user.username = username;
+    user.password = hashPassword;
+    user.isActive = true;
+    user.isSuperuser = false;
+
+    return this.usersRepository.insert(user);
   }
 }

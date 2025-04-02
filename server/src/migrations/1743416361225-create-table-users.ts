@@ -10,10 +10,12 @@ export class CreateTableUsers1743416361225 implements MigrationInterface {
             name: 'username',
             type: 'varchar',
             isPrimary: true,
+            length: '150',
           },
           {
             name: 'password',
             type: 'varchar',
+            length: '255',
           },
           {
             name: 'is_superuser',
