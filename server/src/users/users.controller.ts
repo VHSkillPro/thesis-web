@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
   Post,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -52,5 +55,16 @@ export class UsersController {
   async create(@Body() createUserDto: CreateUserDto) {
     await this.usersService.create(createUserDto);
     return new BaseResponseDto(UsersMessage.CREATE_SUCCESS);
+  }
+
+  @Delete(':username')
+  async delete(@Param('username') username: string, @Request() request) {
+    if (username === request.user.username) {
+      throw new BadRequestException({
+        message: UsersMessage.CANNOT_DELETE_SELF,
+      });
+    }
+    await this.usersService.delete(username);
+    return new BaseResponseDto(UsersMessage.DELETE_SUCCESS);
   }
 }
