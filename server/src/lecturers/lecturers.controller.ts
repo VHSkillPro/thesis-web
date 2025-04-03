@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { LecturersService } from './lecturers.service';
 import { LecturersFilterDto } from './dto/lecturers-filter.dto';
@@ -6,9 +17,11 @@ import {
   BaseResponseDto,
   PaginationMetaDto,
   PaginationResponseDto,
+  ShowResponseDto,
 } from 'src/dto/response.dto';
 import { LecturersMessage } from './lecturers.message';
 import { CreateLecturerDto } from './dto/create-lecturer.dto';
+import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 
 @UseGuards(AuthGuard)
 @Controller('lecturers')
@@ -31,9 +44,36 @@ export class LecturersController {
     );
   }
 
+  @Get(':username')
+  async findOne(@Param('username') username: string) {
+    const lecturer = await this.lecturersService.findOne(username);
+    if (!lecturer) {
+      throw new BadRequestException({
+        message: LecturersMessage.LECTURER_NOT_FOUND,
+      });
+    }
+
+    return new ShowResponseDto(LecturersMessage.FIND_ONE_SUCCESS, lecturer);
+  }
+
   @Post()
   async create(@Body() createLecturerDto: CreateLecturerDto) {
     await this.lecturersService.create(createLecturerDto);
     return new BaseResponseDto(LecturersMessage.CREATE_SUCCESS);
+  }
+
+  @Patch(':username')
+  async update(
+    @Param('username') username: string,
+    @Body() updateLecturerDto: UpdateLecturerDto,
+  ) {
+    await this.lecturersService.update(username, updateLecturerDto);
+    return new BaseResponseDto(LecturersMessage.UPDATE_SUCCESS);
+  }
+
+  @Delete(':username')
+  async delete(@Param('username') username: string) {
+    await this.lecturersService.delete(username);
+    return new BaseResponseDto(LecturersMessage.DELETE_SUCCESS);
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Query } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lecturer } from './lecturers.entity';
@@ -7,6 +7,7 @@ import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { UsersService } from 'src/users/users.service';
 import { UsersMessage } from 'src/users/users.message';
 import { LecturersMessage } from './lecturers.message';
+import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 
 @Injectable()
 export class LecturersService {
@@ -84,6 +85,12 @@ export class LecturersService {
     return await query.getMany();
   }
 
+  /**
+   * Retrieves a single lecturer by their associated username.
+   *
+   * @param username - The username of the lecturer to retrieve.
+   * @returns A promise that resolves to the lecturer entity if found, or null if not found.
+   */
   async findOne(username: string) {
     return await this.lecturersRepository.findOne({
       where: {
@@ -127,5 +134,50 @@ export class LecturersService {
       user: userRef,
     });
     return await this.lecturersRepository.insert(newLecturer);
+  }
+
+  /**
+   * Updates the details of an existing lecturer identified by their username.
+   *
+   * @param username - The username of the lecturer to update.
+   * @param updateLecturerDto - An object containing the updated lecturer details, excluding the username.
+   * @returns A promise that resolves to the updated lecturer entity.
+   * @throws {BadRequestException} If the lecturer with the given username is not found.
+   */
+  async update(username: string, updateLecturerDto: UpdateLecturerDto) {
+    const lecturer = await this.findOne(username);
+    if (!lecturer) {
+      throw new BadRequestException({
+        message: LecturersMessage.LECTURER_NOT_FOUND,
+      });
+    }
+
+    if (updateLecturerDto.lastname) {
+      lecturer.lastname = updateLecturerDto.lastname;
+    }
+
+    if (updateLecturerDto.firstname) {
+      lecturer.firstname = updateLecturerDto.firstname;
+    }
+
+    return await this.lecturersRepository.save(lecturer);
+  }
+
+  /**
+   * Deletes a lecturer by their username.
+   *
+   * @param username - The username of the lecturer to be deleted.
+   * @returns A promise that resolves to the result of the deletion operation.
+   * @throws {BadRequestException} If the lecturer with the given username is not found.
+   */
+  async delete(username: string) {
+    const lecturer = await this.findOne(username);
+    if (!lecturer) {
+      throw new BadRequestException({
+        message: LecturersMessage.LECTURER_NOT_FOUND,
+      });
+    }
+
+    return await this.lecturersRepository.delete(lecturer);
   }
 }
