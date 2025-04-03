@@ -15,32 +15,35 @@ export class UsersService {
   ) {}
 
   /**
-   * Builds a `where` object based on the provided user filter criteria.
-   * This object is used to construct query conditions for filtering users.
+   * Constructs a query builder for retrieving users based on the provided filter criteria.
    *
-   * @param usersFilter - An object containing filter criteria for users.
-   *   - `username` (optional): A string to match usernames containing the given value.
-   *   - `isActive` (optional): A boolean indicating whether to filter by active users.
-   *   - `isSuperuser` (optional): A boolean indicating whether to filter by superusers.
+   * @param usersFilter - An object containing filter criteria for querying users.
+   *   - `username` (optional): A partial or full username to filter users by.
+   *     The query performs a case-insensitive match.
+   *   - `isActive` (optional): A boolean indicating whether to filter users by their active status.
+   *   - `isSuperuser` (optional): A boolean indicating whether to filter users by their superuser status.
    *
-   * @returns An object representing the `where` conditions for querying users.
+   * @returns A query builder instance with the applied filters.
    */
-  private whereBuilder(usersFilter: UsersFilterDto) {
-    const where = {};
+  private findAllQueryBuilder(usersFilter: UsersFilterDto) {
+    const query = this.usersRepository.createQueryBuilder('users');
+    const { username, isActive, isSuperuser } = usersFilter;
 
-    if (usersFilter.username) {
-      where['username'] = Like(`%${usersFilter.username}%`);
+    if (username) {
+      query.andWhere('users.username ILIKE :username', {
+        username: `%${username}%`,
+      });
     }
 
-    if (usersFilter.isActive !== undefined) {
-      where['isActive'] = usersFilter.isActive;
+    if (isActive !== undefined) {
+      query.andWhere('users.isActive = :isActive', { isActive });
     }
 
-    if (usersFilter.isSuperuser !== undefined) {
-      where['isSuperuser'] = usersFilter.isSuperuser;
+    if (isSuperuser !== undefined) {
+      query.andWhere('users.isSuperuser = :isSuperuser', { isSuperuser });
     }
 
-    return where;
+    return query;
   }
 
   /**
@@ -50,9 +53,8 @@ export class UsersService {
    * @returns A promise that resolves to the count of users matching the filter criteria.
    */
   async count(usersFilter: UsersFilterDto): Promise<number> {
-    return this.usersRepository.count({
-      where: this.whereBuilder(usersFilter),
-    });
+    const query = this.findAllQueryBuilder(usersFilter);
+    return await query.getCount();
   }
 
   /**
@@ -62,11 +64,13 @@ export class UsersService {
    * @returns A promise that resolves to an array of users matching the filter criteria.
    */
   async findAll(usersFilter: UsersFilterDto): Promise<User[]> {
-    return this.usersRepository.find({
-      where: this.whereBuilder(usersFilter),
-      skip: (usersFilter.page - 1) * usersFilter.limit,
-      take: usersFilter.limit,
-    });
+    const query = this.findAllQueryBuilder(usersFilter);
+
+    const { page, limit } = usersFilter;
+    query.limit(usersFilter.limit);
+    query.take((page - 1) * limit);
+
+    return await query.getMany();
   }
 
   /**
