@@ -24,9 +24,9 @@ import typeorm from './config/typeorm';
         return options;
       },
     }),
-    UsersModule,
-    AuthModule,
-    LecturersModule,
+    // UsersModule,
+    // AuthModule,
+    // LecturersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

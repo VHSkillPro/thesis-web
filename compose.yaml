@@ -33,10 +33,26 @@ services:
         depends_on:
             - database
 
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: pgadmin4
+        ports:
+            - "8888:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: hailaconsutu558@gmail.com
+            PGADMIN_DEFAULT_PASSWORD: Discoveru1@
+        volumes:
+            - pgadmin-data:/var/lib/pgadmin
+        depends_on:
+            - database
+        networks:
+            - postgres
+
 volumes:
     server:
     server-uploads:
     pgdata:
+    pgadmin-data:
 
 networks:
     postgres:
