@@ -11,7 +11,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthMessage } from './auth.message';
+import { AuthMessageSuccess } from './auth.message';
 import { AuthGuard } from './auth.guard';
 
 @Controller('auth')
@@ -22,19 +22,19 @@ export class AuthController {
   @Post('login')
   async login(@Body() signInDto: SignInDto) {
     const tokens = await this.authService.signIn(signInDto);
-    return new ShowResponseDto(AuthMessage.LOGIN_SUCCESS, tokens);
+    return new ShowResponseDto(AuthMessageSuccess.LOGIN_SUCCESS, tokens);
   }
 
   @Get('me')
   @UseGuards(AuthGuard)
   async me(@Request() request) {
-    return new ShowResponseDto(AuthMessage.ME_SUCCESS, request.user);
+    return new ShowResponseDto(AuthMessageSuccess.ME_SUCCESS, request.user);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(@Body() refreshDto: { refreshToken: string }) {
     const tokens = await this.authService.refresh(refreshDto.refreshToken);
-    return new ShowResponseDto(AuthMessage.REFRESH_SUCCESS, tokens);
+    return new ShowResponseDto(AuthMessageSuccess.REFRESH_SUCCESS, tokens);
   }
 }

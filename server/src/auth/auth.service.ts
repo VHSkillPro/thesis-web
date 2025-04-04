@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { AuthMessage } from './auth.message';
+import { AuthMessageError } from './auth.message';
 import { UsersService } from 'src/users/users.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokensDto } from './dto/tokens.dto';
@@ -28,7 +28,7 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException({
-        message: AuthMessage.WRONG_USERNAME_OR_PASSWORD,
+        message: AuthMessageError.WRONG_USERNAME_OR_PASSWORD,
       });
     }
 
@@ -65,7 +65,7 @@ export class AuthService {
 
     if (!payload) {
       throw new UnauthorizedException({
-        message: AuthMessage.UNAUTHORIZED,
+        message: AuthMessageError.UNAUTHORIZED,
       });
     }
 

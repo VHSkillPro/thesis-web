@@ -25,13 +25,17 @@ import {
 } from './lecturers.message';
 import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { UpdateLecturerDto } from './dto/update-lecturer.dto';
+import { Roles } from 'src/role/role.decorator';
+import { Role } from 'src/role/role.enum';
+import { RolesGuard } from 'src/role/role.guard';
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
 @Controller('lecturers')
 export class LecturersController {
   constructor(private lecturersService: LecturersService) {}
 
   @Get()
+  @Roles(Role.Admin)
   async findAll(@Query() lecturersFilterDto: LecturersFilterDto) {
     const lecturers = await this.lecturersService.findAll(lecturersFilterDto);
     const count = await this.lecturersService.count(lecturersFilterDto);
@@ -48,6 +52,7 @@ export class LecturersController {
   }
 
   @Get(':username')
+  @Roles(Role.Admin, Role.Lecturer)
   async findOne(@Param('username') username: string) {
     const lecturer = await this.lecturersService.findOne(username);
     if (!lecturer) {
@@ -63,12 +68,14 @@ export class LecturersController {
   }
 
   @Post()
+  @Roles(Role.Admin)
   async create(@Body() createLecturerDto: CreateLecturerDto) {
     await this.lecturersService.create(createLecturerDto);
     return new BaseResponseDto(LecturersMessageSuccess.CREATE_SUCCESS);
   }
 
   @Patch(':username')
+  @Roles(Role.Admin)
   async update(
     @Param('username') username: string,
     @Body() updateLecturerDto: UpdateLecturerDto,
@@ -78,6 +85,7 @@ export class LecturersController {
   }
 
   @Delete(':username')
+  @Roles(Role.Admin)
   async delete(@Param('username') username: string) {
     await this.lecturersService.delete(username);
     return new BaseResponseDto(LecturersMessageSuccess.DELETE_SUCCESS);

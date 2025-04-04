@@ -4,9 +4,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { AuthMessage } from './auth.message';
 import { Request } from 'express';
+import { JwtService } from '@nestjs/jwt';
+import { AuthMessageError } from './auth.message';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -28,24 +28,26 @@ export class AuthGuard implements CanActivate {
    * 4. Attaches the decoded payload to the request object under the `user` property.
    * 5. Throws an `UnauthorizedException` if the token verification fails.
    */
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
 
     const token = this.extractTokenFromHeader(request);
     if (!token) {
       throw new UnauthorizedException({
-        message: AuthMessage.UNAUTHORIZED,
+        message: AuthMessageError.UNAUTHORIZED,
       });
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = this.jwtService.verify(token, {
         secret: process.env.ACCESS_SECRET_KEY,
       });
-      request['user'] = payload;
+      request['user'] = {
+        username: payload.username,
+      };
     } catch {
       throw new UnauthorizedException({
-        message: AuthMessage.UNAUTHORIZED,
+        message: AuthMessageError.UNAUTHORIZED,
       });
     }
 
