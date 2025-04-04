@@ -1,12 +1,21 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity({ name: 'users' })
+@Entity()
 export class User {
-  @PrimaryColumn()
+  @PrimaryColumn({ length: 20 })
   username: string;
 
-  @Column()
+  @Column({ length: 255 })
   password: string;
+
+  @Column({ length: 255 })
+  fullname: string;
+
+  @Column({ length: 255, nullable: true })
+  course?: string;
+
+  @Column({ name: 'class_name', length: 255, nullable: true })
+  className?: string;
 
   @Column({ name: 'is_superuser', default: false })
   isSuperuser: boolean;
@@ -14,9 +23,6 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
-
-  @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
-  updatedAt: Date;
+  @Column({ name: 'role_id', length: 255 })
+  roleId: string;
 }

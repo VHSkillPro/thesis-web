@@ -1,11 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Like, Repository } from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersFilterDto } from './dto/user-filter.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UsersMessage } from './users.message';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -15,19 +12,22 @@ export class UsersService {
   ) {}
 
   /**
-   * Constructs a query builder for retrieving users based on the provided filter criteria.
+   * Builds a query builder to retrieve users based on the provided filter criteria.
    *
-   * @param usersFilter - An object containing filter criteria for querying users.
-   *   - `username` (optional): A partial or full username to filter users by.
-   *     The query performs a case-insensitive match.
-   *   - `isActive` (optional): A boolean indicating whether to filter users by their active status.
-   *   - `isSuperuser` (optional): A boolean indicating whether to filter users by their superuser status.
+   * @param usersFilter - An object containing filter options for querying users:
+   *   - `username` (optional): Filters users by a partial or full username (case-insensitive).
+   *   - `fullname` (optional): Filters users by a partial or full name (case-insensitive).
+   *   - `course` (optional): Filters users by their course (case-insensitive).
+   *   - `className` (optional): Filters users by their class name (case-insensitive).
+   *   - `isActive` (optional): Filters users by their active status.
+   *   - `isSuperuser` (optional): Filters users by their superuser status.
+   *   - `roleId` (optional): Filters users by their associated role ID.
    *
    * @returns A query builder instance with the applied filters.
    */
   private findAllQueryBuilder(usersFilter: UsersFilterDto) {
     const query = this.usersRepository.createQueryBuilder('users');
-    const { username, isActive, isSuperuser } = usersFilter;
+    const { username, isActive, isSuperuser, roleId } = usersFilter;
 
     if (username) {
       query.andWhere('users.username ILIKE :username', {
@@ -35,22 +35,44 @@ export class UsersService {
       });
     }
 
-    if (isActive !== undefined) {
-      query.andWhere('users.isActive = :isActive', { isActive });
+    if (usersFilter.fullname) {
+      query.andWhere('users.fullname ILIKE :fullname', {
+        fullname: `%${usersFilter.fullname}%`,
+      });
+    }
+
+    if (usersFilter.course) {
+      query.andWhere('users.course ILIKE :course', {
+        course: `%${usersFilter.course}%`,
+      });
+    }
+
+    if (usersFilter.className) {
+      query.andWhere('users.className ILIKE :className', {
+        className: `%${usersFilter.className}%`,
+      });
     }
 
     if (isSuperuser !== undefined) {
       query.andWhere('users.isSuperuser = :isSuperuser', { isSuperuser });
     }
 
+    if (isActive !== undefined) {
+      query.andWhere('users.isActive = :isActive', { isActive });
+    }
+
+    if (roleId) {
+      query.andWhere('users.roleId = :roleId', { roleId: roleId });
+    }
+
     return query;
   }
 
   /**
-   * Counts the number of users matching the provided filter criteria.
+   * Counts the total number of users that match the given filter criteria.
    *
-   * @param usersFilter - An object containing filter options such as username, isActive, and isSuperuser.
-   * @returns A promise that resolves to the count of users matching the filter criteria.
+   * @param usersFilter - An object containing filter options such as username, fullname, course, className, isActive, and isSuperuser.
+   * @returns A promise that resolves to the total count of users matching the filter criteria.
    */
   async count(usersFilter: UsersFilterDto): Promise<number> {
     const query = this.findAllQueryBuilder(usersFilter);
@@ -58,9 +80,9 @@ export class UsersService {
   }
 
   /**
-   * Retrieves a list of users based on the provided filter criteria.
+   * Retrieves a paginated list of users based on the provided filter criteria.
    *
-   * @param usersFilter - An object containing filter options such as username, isActive, isSuperuser, page, and limit.
+   * @param usersFilter - An object containing filter options such as username, fullname, course, className, isActive, isSuperuser, page, and limit.
    * @returns A promise that resolves to an array of users matching the filter criteria.
    */
   async findAll(usersFilter: UsersFilterDto): Promise<User[]> {
@@ -74,9 +96,9 @@ export class UsersService {
   }
 
   /**
-   * Retrieves a single user by their username.
+   * Finds a single user by their username.
    *
-   * @param username - The username of the user to find.
+   * @param username - The username of the user to retrieve.
    * @returns A promise that resolves to the user object if found, or `null` if no user exists with the given username.
    */
   async findOne(username: string): Promise<User | null> {
@@ -85,65 +107,5 @@ export class UsersService {
         username,
       },
     });
-  }
-
-  /**
-   * Creates a new user in the system.
-   *
-   * @param createUserDto - Data Transfer Object containing the details of the user to be created.
-   * @returns A promise that resolves to the result of the user insertion operation.
-   * @throws {BadRequestException} If a user with the given username already exists.
-   */
-  async create(createUserDto: CreateUserDto) {
-    const { username, password } = createUserDto;
-
-    if (await this.findOne(username)) {
-      throw new BadRequestException({ message: UsersMessage.USER_EXISTS });
-    }
-
-    const saltOrRounds = 10;
-    const hashPassword = bcrypt.hashSync(password, saltOrRounds);
-
-    const user = new User();
-    user.username = username;
-    user.password = hashPassword;
-    user.isActive = true;
-    user.isSuperuser = false;
-
-    return this.usersRepository.insert(user);
-  }
-
-  /**
-   * Deletes a user by their username.
-   *
-   * This method first checks if the user exists. If the user does not exist,
-   * a `BadRequestException` is thrown with an appropriate error message.
-   *
-   * Additionally, if the user is a superuser, the deletion is not allowed,
-   * and a `BadRequestException` is thrown to prevent the operation.
-   *
-   * Before performing the deletion, a TODO is noted to check for any
-   * relationships with other entities that might need to be handled.
-   *
-   * @param username - The username of the user to be deleted.
-   * @returns A promise that resolves to the result of the deletion operation.
-   * @throws BadRequestException if the user does not exist or is a superuser.
-   */
-  async delete(username: string) {
-    const user = await this.findOne(username);
-
-    if (!user) {
-      throw new BadRequestException({ message: UsersMessage.USER_NOT_FOUND });
-    }
-
-    if (user.isSuperuser) {
-      throw new BadRequestException({
-        message: UsersMessage.CANNOT_DELETE_SUPER,
-      });
-    }
-
-    // TODO: Check relation with other entities before deleting
-
-    return this.usersRepository.delete({ username });
   }
 }

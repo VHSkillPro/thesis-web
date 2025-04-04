@@ -1,14 +1,10 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { PaginationFilterDto } from 'src/dto/filter.dto';
+import { PickType } from '@nestjs/swagger';
+import { UsersFilterDto } from '../../users/dto/user-filter.dto';
 
-export class LecturersFilterDto extends PaginationFilterDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(150)
-  username: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  name: string;
-}
+export class LecturersFilterDto extends PickType(UsersFilterDto, [
+  'username',
+  'fullname',
+  'isActive',
+  'page',
+  'limit',
+] as const) {}

@@ -19,7 +19,10 @@ import {
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import { LecturersMessage } from './lecturers.message';
+import {
+  LecturersMessageError,
+  LecturersMessageSuccess,
+} from './lecturers.message';
 import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 
@@ -34,7 +37,7 @@ export class LecturersController {
     const count = await this.lecturersService.count(lecturersFilterDto);
 
     return new PaginationResponseDto(
-      LecturersMessage.FIND_ALL_SUCCESS,
+      LecturersMessageSuccess.FIND_ALL_SUCCESS,
       lecturers,
       new PaginationMetaDto(
         count,
@@ -49,17 +52,20 @@ export class LecturersController {
     const lecturer = await this.lecturersService.findOne(username);
     if (!lecturer) {
       throw new BadRequestException({
-        message: LecturersMessage.LECTURER_NOT_FOUND,
+        message: LecturersMessageError.LECTURER_NOT_FOUND,
       });
     }
 
-    return new ShowResponseDto(LecturersMessage.FIND_ONE_SUCCESS, lecturer);
+    return new ShowResponseDto(
+      LecturersMessageSuccess.FIND_ONE_SUCCESS,
+      lecturer,
+    );
   }
 
   @Post()
   async create(@Body() createLecturerDto: CreateLecturerDto) {
     await this.lecturersService.create(createLecturerDto);
-    return new BaseResponseDto(LecturersMessage.CREATE_SUCCESS);
+    return new BaseResponseDto(LecturersMessageSuccess.CREATE_SUCCESS);
   }
 
   @Patch(':username')
@@ -68,12 +74,12 @@ export class LecturersController {
     @Body() updateLecturerDto: UpdateLecturerDto,
   ) {
     await this.lecturersService.update(username, updateLecturerDto);
-    return new BaseResponseDto(LecturersMessage.UPDATE_SUCCESS);
+    return new BaseResponseDto(LecturersMessageSuccess.UPDATE_SUCCESS);
   }
 
   @Delete(':username')
   async delete(@Param('username') username: string) {
     await this.lecturersService.delete(username);
-    return new BaseResponseDto(LecturersMessage.DELETE_SUCCESS);
+    return new BaseResponseDto(LecturersMessageSuccess.DELETE_SUCCESS);
   }
 }

@@ -3,16 +3,16 @@ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 export class CreateLecturerDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(150)
+  @MaxLength(20)
   username: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
-  firstname: string;
+  @MaxLength(255)
+  password: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
-  lastname: string;
+  @MaxLength(255)
+  fullname: string;
 }

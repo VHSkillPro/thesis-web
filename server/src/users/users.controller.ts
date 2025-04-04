@@ -1,30 +1,23 @@
 import {
-  BadRequestException,
-  Body,
   Controller,
-  Delete,
   Get,
   NotFoundException,
   Param,
-  Post,
   Query,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
-  BaseResponseDto,
   PaginationMetaDto,
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
 import { UsersService } from './users.service';
-import { UsersMessage } from './users.message';
+import { UsersMessageError, UsersMessageSuccess } from './users.message';
 import { UsersFilterDto } from './dto/user-filter.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
 
-@UseGuards(AuthGuard)
 @Controller('users')
+@UseGuards(AuthGuard)
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
@@ -34,7 +27,7 @@ export class UsersController {
     const count = await this.usersService.count(usersFilter);
 
     return new PaginationResponseDto(
-      UsersMessage.FIND_ALL_SUCCESS,
+      UsersMessageSuccess.FIND_ALL_SUCCESS,
       users,
       new PaginationMetaDto(count, usersFilter.page, usersFilter.limit),
     );
@@ -45,26 +38,11 @@ export class UsersController {
     const user = await this.usersService.findOne(username);
 
     if (!user) {
-      throw new NotFoundException({ message: UsersMessage.USER_NOT_FOUND });
-    }
-
-    return new ShowResponseDto(UsersMessage.FIND_ONE_SUCCESS, user);
-  }
-
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    await this.usersService.create(createUserDto);
-    return new BaseResponseDto(UsersMessage.CREATE_SUCCESS);
-  }
-
-  @Delete(':username')
-  async delete(@Param('username') username: string, @Request() request) {
-    if (username === request.user.username) {
-      throw new BadRequestException({
-        message: UsersMessage.CANNOT_DELETE_SELF,
+      throw new NotFoundException({
+        message: UsersMessageError.USER_NOT_FOUND,
       });
     }
-    await this.usersService.delete(username);
-    return new BaseResponseDto(UsersMessage.DELETE_SUCCESS);
+
+    return new ShowResponseDto(UsersMessageSuccess.FIND_ONE_SUCCESS, user);
   }
 }
