@@ -35,7 +35,7 @@ export class LecturersController {
   constructor(private lecturersService: LecturersService) {}
 
   @Get()
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.Lecturer)
   async findAll(@Query() lecturersFilterDto: LecturersFilterDto) {
     const lecturers = await this.lecturersService.findAll(lecturersFilterDto);
     const count = await this.lecturersService.count(lecturersFilterDto);

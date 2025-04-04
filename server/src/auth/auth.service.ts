@@ -32,7 +32,12 @@ export class AuthService {
       });
     }
 
-    const payload = { username: user.username };
+    const payload = {
+      username: user.username,
+      fullname: user.fullname,
+      isActive: user.isActive,
+      roleId: user.roleId,
+    };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.ACCESS_SECRET_KEY,
@@ -59,28 +64,33 @@ export class AuthService {
    * using the respective secret keys and expiration times defined in the environment variables.
    */
   async refresh(refreshToken: string): Promise<TokensDto> {
-    const payload = this.jwtService.verify(refreshToken, {
-      secret: process.env.REFRESH_SECRET_KEY,
-    });
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.REFRESH_SECRET_KEY,
+      });
 
-    if (!payload) {
+      const newPayload = {
+        username: payload.username,
+        fullname: payload.fullname,
+        isActive: payload.isActive,
+        roleId: payload.roleId,
+      };
+
+      const accessToken = this.jwtService.sign(newPayload, {
+        secret: process.env.ACCESS_SECRET_KEY,
+        expiresIn: Number(process.env.ACCESS_TOKEN_LIFETIME),
+      });
+
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        secret: process.env.REFRESH_SECRET_KEY,
+        expiresIn: Number(process.env.REFRESH_TOKEN_LIFETIME),
+      });
+
+      return new TokensDto(accessToken, newRefreshToken);
+    } catch {
       throw new UnauthorizedException({
         message: AuthMessageError.UNAUTHORIZED,
       });
     }
-
-    const newPayload = { username: payload.username };
-
-    const accessToken = this.jwtService.sign(newPayload, {
-      secret: process.env.ACCESS_SECRET_KEY,
-      expiresIn: Number(process.env.ACCESS_TOKEN_LIFETIME),
-    });
-
-    const newRefreshToken = this.jwtService.sign(newPayload, {
-      secret: process.env.REFRESH_SECRET_KEY,
-      expiresIn: Number(process.env.REFRESH_TOKEN_LIFETIME),
-    });
-
-    return new TokensDto(accessToken, newRefreshToken);
   }
 }
