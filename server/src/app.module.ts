@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LecturersModule } from './lecturers/lecturers.module';
 import { RolesGuard } from './role/role.guard';
+import { StudentsModule } from './students/students.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RolesGuard } from './role/role.guard';
     UsersModule,
     AuthModule,
     LecturersModule,
+    StudentsModule,
   ],
   providers: [],
 })

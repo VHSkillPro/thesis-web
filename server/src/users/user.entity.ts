@@ -25,4 +25,7 @@ export class User {
 
   @Column({ name: 'role_id', length: 255 })
   roleId: string;
+
+  @Column({ name: 'card_path', type: 'text', nullable: true })
+  cardPath?: string;
 }
