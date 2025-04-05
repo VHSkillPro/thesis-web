@@ -172,6 +172,6 @@ export class LecturersService {
 
     // TODO: Check if the lecturer is assigned to any courses before deleting
 
-    return await this.usersRepository.delete({ username });
+    return await this.usersRepository.delete({ username, roleId: 'lecturer' });
   }
 }

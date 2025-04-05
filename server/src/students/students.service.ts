@@ -9,6 +9,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { StudentsMessageError } from './students.message';
 import * as bcrypt from 'bcrypt';
 import { unlink } from 'fs';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -155,5 +156,76 @@ export class StudentsService {
     });
 
     return await this.usersRepository.insert(newStudent);
+  }
+
+  /**
+   * Updates a student's information based on the provided username and update data.
+   * Optionally updates the student's card file if provided.
+   *
+   * @param username - The username of the student to update.
+   * @param updateStudentDto - An object containing the updated student data.
+   * @param card - (Optional) A file object representing the new card to associate with the student.
+   *
+   * @throws {BadRequestException} If the student with the given username is not found.
+   *
+   * @returns A promise that resolves to the updated student entity.
+   */
+  async update(
+    username: string,
+    updateStudentDto?: UpdateStudentDto,
+    card?: Express.Multer.File,
+  ) {
+    const student = await this.findOne(username);
+    if (!student) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    if (updateStudentDto?.password) {
+      const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
+      updateStudentDto.password = hashedPassword;
+    }
+
+    const updatedStudent = this.usersRepository.create({
+      ...student,
+      ...updateStudentDto,
+    });
+
+    if (card) {
+      // TODO: extract face embedding from card
+      updatedStudent.cardPath = card.path;
+      if (student.cardPath) {
+        unlink(student.cardPath, (err) => {
+          console.log('Error deleting file:', err);
+        });
+      }
+    }
+
+    return await this.usersRepository.save(updatedStudent);
+  }
+
+  /**
+   * Deletes a student record based on the provided username.
+   *
+   * @param username - The username of the student to be deleted.
+   * @returns A promise resolving to the result of the delete operation.
+   * @throws {BadRequestException} If the student with the given username is not found.
+   */
+  async delete(username: string) {
+    const student = await this.findOne(username);
+    if (!student) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    // TODO: Check if student is assigned to any classes
+    // TODO: Check if student have face embedding in the database
+
+    return await this.usersRepository.delete({
+      username: username,
+      roleId: 'student',
+    });
   }
 }

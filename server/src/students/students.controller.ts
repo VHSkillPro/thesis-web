@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   FileTypeValidator,
   Get,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -32,6 +34,7 @@ import { Role } from 'src/role/role.enum';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Controller('students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -100,5 +103,45 @@ export class StudentsController {
   ) {
     await this.studentsService.create(createStudentDto, card);
     return new BaseResponseDto(StudentsMessageSuccess.CREATE_SUCCESS);
+  }
+
+  @Patch(':username')
+  @Roles(Role.Admin)
+  @UseInterceptors(
+    FileInterceptor('card', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const filename = Date.now() + '-' + file.originalname;
+          cb(null, filename);
+        },
+      }),
+    }),
+  )
+  async update(
+    @Param('username') username: string,
+    @Body() updateStudentDto?: UpdateStudentDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: false,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({
+            fileType: /(image\/jpeg|image\/jpg|image\/png)/,
+          }),
+        ],
+      }),
+    )
+    card?: Express.Multer.File,
+  ) {
+    await this.studentsService.update(username, updateStudentDto, card);
+    return new BaseResponseDto(StudentsMessageSuccess.UPDATE_SUCCESS);
+  }
+
+  @Delete(':username')
+  @Roles(Role.Admin)
+  async delete(@Param('username') username: string) {
+    await this.studentsService.delete(username);
+    return new BaseResponseDto(StudentsMessageSuccess.DELETE_SUCCESS);
   }
 }
