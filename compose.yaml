@@ -48,6 +48,19 @@ services:
         networks:
             - postgres
 
+    face:
+        container_name: face
+        build:
+            context: ./face
+            target: builder
+        stop_signal: SIGINT
+        volumes:
+            - ./face/:/usr/face/
+        ports:
+            - 5000:5000
+        networks:
+            - postgres
+
 volumes:
     server:
     server-uploads:
