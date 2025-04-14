@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LecturersModule } from './lecturers/lecturers.module';
-import { RolesGuard } from './role/role.guard';
 import { StudentsModule } from './students/students.module';
+import { FacesModule } from './faces/faces.module';
 
 @Module({
   imports: [
@@ -28,6 +28,7 @@ import { StudentsModule } from './students/students.module';
     AuthModule,
     LecturersModule,
     StudentsModule,
+    FacesModule,
   ],
   providers: [],
 })
