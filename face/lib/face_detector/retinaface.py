@@ -7,7 +7,7 @@ from insightface.model_zoo.retinaface import RetinaFace
 class RetinaFaceDetector(BaseFaceDetector):
     def __init__(
         self,
-        confThreshold: float = 0.5,
+        confThreshold: float = 0.35,
         model_file: str = "weights/det_10g.onnx",
     ):
         super().__init__()
