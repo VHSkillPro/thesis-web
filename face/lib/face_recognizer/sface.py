@@ -27,10 +27,6 @@ class SFaceRecognizer(BaseFaceRecognizer):
         )
         return converted_face
 
-    # def align_face(self, image: cv2.typing.MatLike, face: DetectedFace) -> np.ndarray:
-
-    #     pass
-
     def infer(self, image: cv2.typing.MatLike, face: DetectedFace) -> np.ndarray:
         converted_face = self._convert_input_face(face)
         # Integrated face alignment in the SFace model (function _preprocess in SFace class)

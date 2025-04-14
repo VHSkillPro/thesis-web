@@ -1,5 +1,6 @@
 Flask
 Flask-WTF
+WTForms-JSON
 numpy
 opencv-python-headless
 tf-keras
