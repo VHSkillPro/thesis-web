@@ -11,6 +11,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -35,6 +36,9 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { Response } from 'express';
+import { createReadStream, readFileSync } from 'fs';
+import { join } from 'path';
 
 @Controller('students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -72,6 +76,57 @@ export class StudentsController {
       StudentsMessageSuccess.FIND_ONE_SUCCESS,
       student,
     );
+  }
+
+  @Get(':username/card/')
+  @Roles(Role.Admin, Role.Lecturer)
+  async getCard(@Param('username') username: string, @Res() res: Response) {
+    const student = await this.studentsService.findOne(username);
+    if (!student) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    const card = student.cardPath;
+    if (!card) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_CARD_NOT_FOUND,
+      });
+    }
+
+    const cardPath = join(__dirname, '..', '..', card);
+    const cardStream = createReadStream(cardPath);
+    res.set({
+      'Content-Type': 'image/jpeg',
+    });
+    cardStream.pipe(res);
+  }
+
+  @Get(':username/card/base64')
+  @Roles(Role.Admin, Role.Lecturer)
+  async getCardBase64(@Param('username') username: string) {
+    const student = await this.studentsService.findOne(username);
+    if (!student) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    const card = student.cardPath;
+    if (!card) {
+      throw new BadRequestException({
+        message: StudentsMessageError.STUDENT_CARD_NOT_FOUND,
+      });
+    }
+
+    const cardPath = join(__dirname, '..', '..', card);
+    const cardBuffer = readFileSync(cardPath);
+    const base64 = cardBuffer.toString('base64');
+
+    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE_CARD_SUCCESS, {
+      image: `data:image/jpeg;base64,${base64}`,
+    });
   }
 
   @Post()

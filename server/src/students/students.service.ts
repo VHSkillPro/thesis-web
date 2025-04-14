@@ -141,8 +141,6 @@ export class StudentsService {
       });
     }
 
-    // TODO: extract face embedding from card
-
     const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
     const newStudent = this.usersRepository.create({
       username: createStudentDto.username,
@@ -193,7 +191,6 @@ export class StudentsService {
     });
 
     if (card) {
-      // TODO: extract face embedding from card
       updatedStudent.cardPath = card.path;
       if (student.cardPath) {
         unlink(student.cardPath, (err) => {
