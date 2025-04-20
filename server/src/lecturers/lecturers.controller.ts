@@ -3,11 +3,13 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -28,6 +30,7 @@ import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 import { Roles } from 'src/role/role.decorator';
 import { Role } from 'src/role/role.enum';
 import { RolesGuard } from 'src/role/role.guard';
+import { AuthMessageError } from 'src/auth/auth.message';
 
 @UseGuards(AuthGuard, RolesGuard)
 @Controller('lecturers')
@@ -35,7 +38,7 @@ export class LecturersController {
   constructor(private lecturersService: LecturersService) {}
 
   @Get()
-  @Roles(Role.Admin, Role.Lecturer)
+  @Roles(Role.Admin)
   async findAll(@Query() lecturersFilterDto: LecturersFilterDto) {
     const lecturers = await this.lecturersService.findAll(lecturersFilterDto);
     const count = await this.lecturersService.count(lecturersFilterDto);
@@ -53,7 +56,14 @@ export class LecturersController {
 
   @Get(':username')
   @Roles(Role.Admin, Role.Lecturer)
-  async findOne(@Param('username') username: string) {
+  async findOne(@Param('username') username: string, @Request() req) {
+    const user = req.user;
+    if (user.roleId === Role.Lecturer && user.username !== username) {
+      throw new ForbiddenException({
+        message: AuthMessageError.FORBIDDEN,
+      });
+    }
+
     const lecturer = await this.lecturersService.findOne(username);
     if (!lecturer) {
       throw new BadRequestException({

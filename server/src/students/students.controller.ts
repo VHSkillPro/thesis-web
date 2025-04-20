@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   FileTypeValidator,
+  ForbiddenException,
   Get,
   MaxFileSizeValidator,
   Param,
@@ -11,6 +12,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   Res,
   UploadedFile,
   UseGuards,
@@ -39,6 +41,7 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { Response } from 'express';
 import { createReadStream, readFileSync } from 'fs';
 import { join } from 'path';
+import { AuthMessageError } from 'src/auth/auth.message';
 
 @Controller('students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -63,8 +66,15 @@ export class StudentsController {
   }
 
   @Get(':username')
-  @Roles(Role.Admin, Role.Lecturer)
-  async findOne(@Param('username') username: string) {
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async findOne(@Param('username') username: string, @Request() req) {
+    const user = req.user;
+    if (user.roleId === Role.Student && user.username !== username) {
+      throw new ForbiddenException({
+        message: AuthMessageError.FORBIDDEN,
+      });
+    }
+
     const student = await this.studentsService.findOne(username);
     if (!student) {
       throw new BadRequestException({
@@ -79,8 +89,19 @@ export class StudentsController {
   }
 
   @Get(':username/card/')
-  @Roles(Role.Admin, Role.Lecturer)
-  async getCard(@Param('username') username: string, @Res() res: Response) {
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async getCard(
+    @Param('username') username: string,
+    @Res() res: Response,
+    @Request() req,
+  ) {
+    const user = req.user;
+    if (user.roleId === Role.Student && user.username !== username) {
+      throw new ForbiddenException({
+        message: AuthMessageError.FORBIDDEN,
+      });
+    }
+
     const student = await this.studentsService.findOne(username);
     if (!student) {
       throw new BadRequestException({
@@ -104,8 +125,15 @@ export class StudentsController {
   }
 
   @Get(':username/card/base64')
-  @Roles(Role.Admin, Role.Lecturer)
-  async getCardBase64(@Param('username') username: string) {
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async getCardBase64(@Param('username') username: string, @Request() req) {
+    const user = req.user;
+    if (user.roleId === Role.Student && user.username !== username) {
+      throw new ForbiddenException({
+        message: AuthMessageError.FORBIDDEN,
+      });
+    }
+
     const student = await this.studentsService.findOne(username);
     if (!student) {
       throw new BadRequestException({

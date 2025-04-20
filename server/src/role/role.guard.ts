@@ -8,15 +8,11 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from './role.enum';
 import { ROLES_KEY } from './role.decorator';
-import { UsersService } from 'src/users/users.service';
 import { AuthMessageError } from 'src/auth/auth.message';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private usersService: UsersService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
@@ -35,14 +31,7 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    const userInDB = await this.usersService.findOne(user.username);
-    if (!userInDB) {
-      throw new UnauthorizedException({
-        message: AuthMessageError.UNAUTHORIZED,
-      });
-    }
-
-    const result = requiredRoles.some((role) => userInDB?.roleId === role);
+    const result = requiredRoles.some((role) => user.roleId === role);
     if (!result) {
       throw new ForbiddenException({
         message: AuthMessageError.FORBIDDEN,
