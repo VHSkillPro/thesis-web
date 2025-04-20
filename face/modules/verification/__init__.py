@@ -2,7 +2,7 @@ import json, cv2
 import numpy as np
 from http import HTTPStatus
 from PIL import Image, ImageOps
-from flask import Blueprint, Response
+from flask import Blueprint, Response, current_app
 from lib.face_recognizer.base import BaseFaceRecognizer
 from lib.face_detector.base import BaseFaceDetector
 from lib.face_recognizer.arcface import ArcFaceRecognizer

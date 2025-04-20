@@ -5,7 +5,7 @@ import wtforms_json
 wtforms_json.init()
 os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 
 # Register blueprints
 from modules.common import bp as common_bp
