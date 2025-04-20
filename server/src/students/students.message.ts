@@ -11,4 +11,6 @@ export class StudentsMessageError {
   static readonly STUDENT_EXISTS = 'Sinh viên đã tồn tại';
   static readonly STUDENT_NOT_FOUND = 'Không tìm thấy sinh viên';
   static readonly STUDENT_CARD_NOT_FOUND = 'Không tìm thấy thẻ sinh viên';
+  static readonly STUDENT_CARD_SELFIE_NOT_MATCH =
+    'Thẻ sinh viên và ảnh chân dung không khớp';
 }

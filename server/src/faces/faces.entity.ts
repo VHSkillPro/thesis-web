@@ -1,5 +1,4 @@
-import { User } from 'src/users/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Face {
@@ -8,4 +7,10 @@ export class Face {
 
   @Column({ name: 'image_path', type: 'text' })
   imagePath: string;
+
+  @Column()
+  embedding: string;
+
+  @Column({ name: 'student_id' })
+  studentId: string;
 }
