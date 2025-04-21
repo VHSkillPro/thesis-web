@@ -43,6 +43,12 @@ export class AuthGuard implements CanActivate {
         secret: process.env.ACCESS_SECRET_KEY,
       });
 
+      if (payload.isActive === false) {
+        throw new UnauthorizedException({
+          message: AuthMessageError.UNAUTHORIZED,
+        });
+      }
+
       delete payload.iat;
       delete payload.exp;
       request['user'] = { ...payload };

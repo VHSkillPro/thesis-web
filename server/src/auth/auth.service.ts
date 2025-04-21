@@ -32,6 +32,12 @@ export class AuthService {
       });
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException({
+        message: AuthMessageError.USER_NOT_ACTIVE,
+      });
+    }
+
     const payload = {
       username: user.username,
       fullname: user.fullname,

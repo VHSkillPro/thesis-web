@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   FileTypeValidator,
   ForbiddenException,
   Get,
@@ -9,6 +10,7 @@ import {
   ParseFilePipe,
   Post,
   Request,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -20,8 +22,9 @@ import {
   BaseResponseDto,
   PaginationMetaDto,
   PaginationResponseDto,
+  ShowResponseDto,
 } from 'src/dto/response.dto';
-import { FacesMessageSuccess } from './faces.message';
+import { FacesMessageError, FacesMessageSuccess } from './faces.message';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { RolesGuard } from 'src/role/role.guard';
 import { Roles } from 'src/role/role.decorator';
@@ -29,9 +32,9 @@ import { Role } from 'src/role/role.enum';
 import { AuthMessageError } from 'src/auth/auth.message';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { HttpService } from '@nestjs/axios';
-import { catchError, firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
+import { join } from 'path';
+import { createReadStream, readFileSync } from 'fs';
+import { Response } from 'express';
 
 @Controller('/students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -70,6 +73,70 @@ export class FacesController {
     );
   }
 
+  @Get(':username/faces/:id')
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async findOne(
+    @Param('username') username: string,
+    @Param('id') id: number,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    this.selfCheck(req, username);
+
+    const student = await this.studentsService.findOne(username);
+    if (!student) {
+      throw new NotFoundException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    const face = await this.facesService.findOne(id);
+    if (!face) {
+      throw new NotFoundException({
+        message: FacesMessageError.FACE_NOT_FOUND,
+      });
+    }
+
+    const facePath = join(__dirname, '..', '..', face.imagePath);
+    const faceStream = createReadStream(facePath);
+    res.set({
+      'Content-Type': 'image/jpeg',
+    });
+    faceStream.pipe(res);
+  }
+
+  @Get(':username/faces/:id/base64')
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async findOneBase64(
+    @Param('username') username: string,
+    @Param('id') id: number,
+    @Request() req,
+  ) {
+    this.selfCheck(req, username);
+
+    const student = await this.studentsService.findOne(username);
+    if (!student) {
+      throw new NotFoundException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    const face = await this.facesService.findOne(id);
+    if (!face) {
+      throw new NotFoundException({
+        message: FacesMessageError.FACE_NOT_FOUND,
+      });
+    }
+
+    const facePath = join(__dirname, '..', '..', face.imagePath);
+    const faceStream = readFileSync(facePath);
+    const base64 = faceStream.toString('base64');
+
+    return new ShowResponseDto(FacesMessageSuccess.FIND_ONE_SUCCESS, {
+      image: `data:image/jpeg;base64,${base64}`,
+    });
+  }
+
   @Post(':username/faces')
   @Roles(Role.Admin, Role.Lecturer, Role.Student)
   @UseInterceptors(
@@ -101,5 +168,17 @@ export class FacesController {
     this.selfCheck(req, username);
     await this.facesService.create(username, selfie);
     return new BaseResponseDto(FacesMessageSuccess.CREATE_SUCCESS);
+  }
+
+  @Delete(':username/faces/:id')
+  @Roles(Role.Admin, Role.Lecturer, Role.Student)
+  async delete(
+    @Param('username') username: string,
+    @Param('id') id: number,
+    @Request() req,
+  ) {
+    this.selfCheck(req, username);
+    await this.facesService.delete(username, id);
+    return new BaseResponseDto(FacesMessageSuccess.DELETE_SUCCESS);
   }
 }

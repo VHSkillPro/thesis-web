@@ -9,4 +9,5 @@ export class AuthMessageError {
   static readonly FORBIDDEN = 'Bạn không có quyền truy cập vào tài nguyên này';
   static readonly WRONG_USERNAME_OR_PASSWORD =
     'Tài khoản hoặc mật khẩu không đúng';
+  static readonly USER_NOT_ACTIVE = 'Tài khoản không hoạt động';
 }

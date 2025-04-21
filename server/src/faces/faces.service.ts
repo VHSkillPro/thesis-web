@@ -16,6 +16,7 @@ import { StudentsService } from 'src/students/students.service';
 import { StudentsMessageError } from 'src/students/students.message';
 import { AxiosError } from 'axios';
 import * as pgvector from 'pgvector';
+import { FacesMessageError } from './faces.message';
 
 @Injectable()
 export class FacesService {
@@ -191,5 +192,50 @@ export class FacesService {
       unlink(selfie.path, (err) => {});
       throw error;
     }
+  }
+
+  /**
+   * Deletes a face record associated with a student and removes the corresponding image file from the filesystem.
+   *
+   * @param username - The username of the student whose face record is to be deleted.
+   * @param id - The unique identifier of the face record to be deleted.
+   * @throws {NotFoundException} If the student is not found or the face record does not exist.
+   * @throws {InternalServerErrorException} If there is an error deleting the image file from the filesystem.
+   */
+  async delete(username: string, id: number) {
+    const student = await this.studentsService.findOne(username);
+    if (!student) {
+      throw new NotFoundException({
+        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      });
+    }
+
+    const face = await this.facesRepository.findOne({
+      where: { id: id, studentId: username },
+    });
+
+    if (!face) {
+      throw new NotFoundException({
+        message: FacesMessageError.FACE_NOT_FOUND,
+      });
+    }
+
+    try {
+      const facePath = join(__dirname, '..', '..', face.imagePath);
+      const result = await this.facesRepository.delete(id);
+      if (
+        result.affected !== null &&
+        result.affected !== undefined &&
+        result.affected > 0
+      ) {
+        unlink(facePath, (err) => {
+          if (err) {
+            throw new InternalServerErrorException({
+              message: 'Xóa ảnh không thành công',
+            });
+          }
+        });
+      }
+    } catch (error) {}
   }
 }
