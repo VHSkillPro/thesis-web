@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { FacesService } from './faces.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Face } from './faces.entity';
@@ -12,7 +12,6 @@ import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Face]),
-    StudentsModule,
     JwtModule,
     AuthModule,
     UsersModule,
@@ -21,6 +20,7 @@ import { HttpModule } from '@nestjs/axios';
       timeoutErrorMessage: 'Service hỗ trợ các thao tác về khuôn mặt đang bận',
       maxRedirects: 5,
     }),
+    forwardRef(() => StudentsModule),
   ],
   providers: [FacesService],
   controllers: [FacesController],

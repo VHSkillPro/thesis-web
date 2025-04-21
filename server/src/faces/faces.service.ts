@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -22,6 +24,7 @@ import { FacesMessageError } from './faces.message';
 export class FacesService {
   constructor(
     @InjectRepository(Face) private facesRepository: Repository<Face>,
+    @Inject(forwardRef(() => StudentsService))
     private studentsService: StudentsService,
     private readonly httpService: HttpService,
   ) {}

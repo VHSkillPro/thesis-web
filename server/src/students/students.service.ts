@@ -1,8 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/user.entity';
 import { UsersService } from 'src/users/users.service';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { StudentsFilterDto } from './dto/students-filter.dto';
 import { UsersFilterDto } from 'src/users/dto/user-filter.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -10,11 +16,14 @@ import { StudentsMessageError } from './students.message';
 import * as bcrypt from 'bcrypt';
 import { unlink } from 'fs';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { join } from 'path';
+import { FacesService } from 'src/faces/faces.service';
 
 @Injectable()
 export class StudentsService {
   constructor(
     @InjectRepository(User) private usersRepository: Repository<User>,
+    @Inject(forwardRef(() => FacesService)) private facesService: FacesService,
     private usersService: UsersService,
   ) {}
 
@@ -218,11 +227,37 @@ export class StudentsService {
     }
 
     // TODO: Check if student is assigned to any classes
-    // TODO: Check if student have face embedding in the database
 
-    return await this.usersRepository.delete({
+    const cardPath =
+      student.cardPath !== undefined
+        ? join(__dirname, '..', '..', student.cardPath)
+        : undefined;
+    const result = await this.usersRepository.delete({
       username: username,
       roleId: 'student',
     });
+
+    if (
+      result.affected !== null &&
+      result.affected !== undefined &&
+      result.affected > 0
+    ) {
+      if (cardPath) {
+        unlink(cardPath, (err) => {
+          console.log('Error deleting file:', err);
+        });
+      }
+
+      const faces = await this.facesService.findAll(username);
+      for (const face of faces) {
+        await this.facesService.delete(username, face.id);
+      }
+    } else {
+      throw new InternalServerErrorException({
+        message: StudentsMessageError.STUDENT_NOT_DELETED,
+      });
+    }
+
+    return result;
   }
 }
