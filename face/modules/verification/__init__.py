@@ -38,6 +38,9 @@ def verify():
     pil_image_1 = ImageOps.exif_transpose(pil_image_1)
     pil_image_2 = ImageOps.exif_transpose(pil_image_2)
 
+    pil_image_1 = pil_image_1.convert("RGB")
+    pil_image_2 = pil_image_2.convert("RGB")
+
     cv_image_1 = np.array(pil_image_1)
     cv_image_2 = np.array(pil_image_2)
 

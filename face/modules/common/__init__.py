@@ -34,6 +34,7 @@ def get():
 
     pil_image = Image.open(form.image.data.stream)
     pil_image = ImageOps.exif_transpose(pil_image)
+    pil_image = pil_image.convert("RGB")
     cv_image = np.array(pil_image)
     image = cv_image[:, :, ::-1].copy()
 
@@ -78,6 +79,7 @@ def get_single():
 
     pil_image = Image.open(form.image.data.stream)
     pil_image = ImageOps.exif_transpose(pil_image)
+    pil_image = pil_image.convert("RGB")
     cv_image = np.array(pil_image)
     image = cv_image[:, :, ::-1].copy()
 
