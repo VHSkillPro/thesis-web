@@ -22,11 +22,16 @@ import {
 } from 'src/dto/response.dto';
 import { ClassesMessageError, ClassesMessageSuccess } from './classes.message';
 import { CreateClassDto } from './dto/create-class.dto';
+import { LecturersService } from 'src/lecturers/lecturers.service';
+import { LecturersMessageError } from 'src/lecturers/lecturers.message';
 
 @Controller('classes')
 @UseGuards(AuthGuard, RolesGuard)
 export class ClassesController {
-  constructor(private classesService: ClassesService) {}
+  constructor(
+    private classesService: ClassesService,
+    private lecturersService: LecturersService,
+  ) {}
 
   @Get()
   @Roles(Role.Admin, Role.Lecturer)
@@ -62,6 +67,15 @@ export class ClassesController {
     if (existingClass) {
       throw new BadRequestException({
         message: ClassesMessageError.ALREADY_EXISTS,
+      });
+    }
+
+    const lecturer = await this.lecturersService.findOne(
+      createClassDto.lecturerId,
+    );
+    if (!lecturer) {
+      throw new NotFoundException({
+        message: LecturersMessageError.LECTURER_NOT_FOUND,
       });
     }
 
