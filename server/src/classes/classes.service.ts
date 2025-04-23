@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Class } from './classes.entity';
 import { Repository } from 'typeorm';
 import { ClassesFilterDto } from './dto/classes-filter.dto';
+import { CreateClassDto } from './dto/create-class.dto';
 
 @Injectable()
 export class ClassesService {
@@ -84,5 +85,16 @@ export class ClassesService {
     return await this.classesRepository.findOne({
       where: { id },
     });
+  }
+
+  /**
+   * Creates a new class entry in the repository.
+   *
+   * @param classData - The data required to create a new class, adhering to the `CreateClassDto` structure.
+   * @returns A promise that resolves to the result of the insertion operation.
+   */
+  async create(classData: CreateClassDto) {
+    const newClass = this.classesRepository.create(classData);
+    return await this.classesRepository.insert(newClass);
   }
 }
