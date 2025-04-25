@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Class } from './classes.entity';
 import { Repository } from 'typeorm';
@@ -8,11 +12,15 @@ import { ClassesMessageError } from './classes.message';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { LecturersService } from 'src/lecturers/lecturers.service';
 import { LecturersMessageError } from 'src/lecturers/lecturers.message';
+import { StudentsClasses } from 'src/students_classes/students_classes.entity';
+import { connectionSource } from 'src/config/typeorm';
 
 @Injectable()
 export class ClassesService {
   constructor(
     @InjectRepository(Class) private classesRepository: Repository<Class>,
+    @InjectRepository(StudentsClasses)
+    private studentsClassesRepository: Repository<StudentsClasses>,
     private lecturersService: LecturersService,
   ) {}
 
@@ -119,7 +127,7 @@ export class ClassesService {
   async update(id: string, classData: UpdateClassDto) {
     const classToUpdate = await this.findOne(id);
     if (!classToUpdate) {
-      throw new BadRequestException({
+      throw new NotFoundException({
         message: ClassesMessageError.NOT_FOUND,
       });
     }
@@ -161,13 +169,22 @@ export class ClassesService {
   async delete(id: string) {
     const classToDelete = await this.findOne(id);
     if (!classToDelete) {
-      throw new BadRequestException({
+      throw new NotFoundException({
         message: ClassesMessageError.NOT_FOUND,
       });
     }
 
-    // TODO: Delete all students enrolled in the class
+    return await (
+      await connectionSource.initialize()
+    ).transaction(async (manager) => {
+      // Delete all students enrolled in the class
+      await manager.delete(StudentsClasses, {
+        classId: id,
+      });
 
-    return await this.classesRepository.delete(id);
+      await manager.delete(Class, {
+        id,
+      });
+    });
   }
 }

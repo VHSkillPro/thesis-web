@@ -1,6 +1,8 @@
 export class StudentsClassesMessageSuccess {
   static readonly FIND_ALL = 'Lấy danh sách sinh viên của lớp học thành công';
+  static readonly FIND_ONE = 'Lấy thông tin sinh viên trong lớp học thành công';
   static readonly CREATE = 'Thêm sinh viên vào lớp học thành công';
+  static readonly DELETE = 'Xóa sinh viên khỏi lớp học thành công';
 }
 
 export class StudentsClassesMessageError {

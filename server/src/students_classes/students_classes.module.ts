@@ -7,10 +7,11 @@ import { AuthModule } from 'src/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ClassesModule } from 'src/classes/classes.module';
 import { StudentsModule } from 'src/students/students.module';
+import { Student } from 'src/students/students.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([StudentsClasses]),
+    TypeOrmModule.forFeature([StudentsClasses, Student]),
     AuthModule,
     JwtModule,
     ClassesModule,

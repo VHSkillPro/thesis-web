@@ -8,13 +8,15 @@ import { ClassesMessageError } from 'src/classes/classes.message';
 import { StudentsFilterDto } from '../students/dto/students-filter.dto';
 import { StudentsMessageError } from 'src/students/students.message';
 import { StudentsClassesMessageError } from './students_classes.message';
-import { User } from 'src/users/user.entity';
+import { Student } from 'src/students/students.entity';
 
 @Injectable()
 export class StudentsClassesService {
   constructor(
     @InjectRepository(StudentsClasses)
     private studentsClassesRepository: Repository<StudentsClasses>,
+    @InjectRepository(Student)
+    private studentsRepository: Repository<Student>,
     private classesService: ClassesService,
     private studentsService: StudentsService,
   ) {}
@@ -32,52 +34,44 @@ export class StudentsClassesService {
     classId: string,
     studentsFilterDto: StudentsFilterDto,
   ) {
-    const query =
-      this.studentsClassesRepository.createQueryBuilder('students_classes');
+    const query = this.studentsRepository.createQueryBuilder('student');
     query.innerJoin(
-      'user',
-      'student',
-      'students_classes.studentId = student.username',
+      StudentsClasses,
+      'students_classes',
+      'student.username = students_classes.studentId',
     );
     query.andWhere('students_classes.classId = :classId', { classId });
 
-    if (studentsFilterDto?.username) {
-      query.andWhere('student.username = :username', {
-        username: studentsFilterDto.username,
+    if (studentsFilterDto.username) {
+      query.andWhere('student.username ILKIE :username', {
+        username: `%${studentsFilterDto.username}%`,
       });
     }
 
-    if (studentsFilterDto?.fullname) {
+    if (studentsFilterDto.fullname) {
       query.andWhere('student.fullname ILIKE :fullname', {
         fullname: `%${studentsFilterDto.fullname}%`,
       });
     }
 
-    if (studentsFilterDto?.course) {
+    if (studentsFilterDto.course) {
       query.andWhere('student.course ILIKE :course', {
         course: `%${studentsFilterDto.course}%`,
       });
     }
 
-    if (studentsFilterDto?.className) {
+    if (studentsFilterDto.className) {
       query.andWhere('student.className ILIKE :className', {
         className: `%${studentsFilterDto.className}%`,
       });
     }
 
-    if (studentsFilterDto?.isActive !== undefined) {
+    if (studentsFilterDto.isActive) {
       query.andWhere('student.isActive = :isActive', {
         isActive: studentsFilterDto.isActive,
       });
     }
 
-    query.select([
-      'student.username',
-      'student.fullname',
-      'student.course',
-      'student.className',
-      'student.isActive',
-    ]);
     return query;
   }
 
@@ -129,6 +123,15 @@ export class StudentsClassesService {
     return await query.getMany();
   }
 
+  /**
+   * Finds a specific student-class association based on the provided class ID and student ID.
+   *
+   * @param classId - The unique identifier of the class.
+   * @param studentId - The unique identifier of the student.
+   * @returns A promise that resolves to the student-class association entity if found.
+   * @throws {NotFoundException} If the class with the given ID does not exist.
+   * @throws {NotFoundException} If the student-class association does not exist.
+   */
   async findOne(classId: string, studentId: string) {
     const classEntity = await this.classesService.findOne(classId);
     if (!classEntity) {
@@ -137,23 +140,14 @@ export class StudentsClassesService {
       });
     }
 
-    const query =
-      this.studentsClassesRepository.createQueryBuilder('students_classes');
+    const query = this.studentsRepository.createQueryBuilder('student');
     query.innerJoin(
-      'user',
-      'student',
+      StudentsClasses,
+      'students_classes',
       'students_classes.studentId = student.username',
     );
     query.andWhere('students_classes.classId = :classId', { classId });
     query.andWhere('students_classes.studentId = :studentId', { studentId });
-    query.select([
-      'student.username',
-      'student.fullname',
-      'student.course',
-      'student.className',
-      'student.isActive',
-      'students_classes.classId',
-    ]);
 
     const studentsClasses = await query.getOne();
     if (!studentsClasses) {
@@ -207,5 +201,37 @@ export class StudentsClassesService {
       studentId,
     });
     return await this.studentsClassesRepository.insert(newStudentClass);
+  }
+
+  /**
+   * Deletes the association between a student and a class.
+   *
+   * @param classId - The unique identifier of the class.
+   * @param studentId - The unique identifier of the student.
+   * @throws {NotFoundException} If the class with the given `classId` does not exist.
+   * @throws {NotFoundException} If the association between the student and the class does not exist.
+   * @returns A promise that resolves when the association is successfully deleted.
+   */
+  async delete(classId: string, studentId: string) {
+    const classEntity = await this.classesService.findOne(classId);
+    if (!classEntity) {
+      throw new NotFoundException({
+        message: ClassesMessageError.NOT_FOUND,
+      });
+    }
+
+    const studentClass = await this.studentsClassesRepository.findOne({
+      where: {
+        classId,
+        studentId,
+      },
+    });
+    if (!studentClass) {
+      throw new NotFoundException({
+        message: StudentsClassesMessageError.NOT_FOUND,
+      });
+    }
+
+    return await this.studentsClassesRepository.delete(studentClass);
   }
 }
