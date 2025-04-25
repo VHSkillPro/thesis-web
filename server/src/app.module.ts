@@ -8,6 +8,7 @@ import { LecturersModule } from './lecturers/lecturers.module';
 import { StudentsModule } from './students/students.module';
 import { FacesModule } from './faces/faces.module';
 import { ClassesModule } from './classes/classes.module';
+import { StudentsClassesModule } from './students_classes/students_classes.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ClassesModule } from './classes/classes.module';
     StudentsModule,
     FacesModule,
     ClassesModule,
+    StudentsClassesModule,
   ],
   providers: [],
 })
