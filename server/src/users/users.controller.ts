@@ -31,7 +31,7 @@ export class UsersController {
     const count = await this.usersService.count(usersFilter);
 
     return new PaginationResponseDto(
-      UsersMessageSuccess.FIND_ALL_SUCCESS,
+      UsersMessageSuccess.FIND_ALL,
       users,
       new PaginationMetaDto(count, usersFilter.page, usersFilter.limit),
     );
@@ -48,6 +48,6 @@ export class UsersController {
       });
     }
 
-    return new ShowResponseDto(UsersMessageSuccess.FIND_ONE_SUCCESS, user);
+    return new ShowResponseDto(UsersMessageSuccess.FIND_ONE, user);
   }
 }

@@ -15,8 +15,6 @@ export class StudentsClassesService {
   constructor(
     @InjectRepository(StudentsClasses)
     private studentsClassesRepository: Repository<StudentsClasses>,
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
     private classesService: ClassesService,
     private studentsService: StudentsService,
   ) {}

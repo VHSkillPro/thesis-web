@@ -1,42 +1,57 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { User } from 'src/users/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
 import { LecturersMessageError } from './lecturers.message';
 import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { UpdateLecturerDto } from './dto/update-lecturer.dto';
-import { UsersFilterDto } from 'src/users/dto/user-filter.dto';
 import { LecturersFilterDto } from './dto/lecturers-filter.dto';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Lecturer } from './lecturers.entity';
 
 @Injectable()
 export class LecturersService {
   constructor(
-    @InjectRepository(User) private usersRepository: Repository<User>,
+    @InjectRepository(Lecturer)
+    private lecturersRepositoty: Repository<Lecturer>,
     private usersSevice: UsersService,
   ) {}
 
   /**
-   * Converts a `LecturersFilterDto` object into a `UsersFilterDto` object.
+   * Constructs a query builder to retrieve lecturers based on the provided filter criteria.
    *
-   * This method maps the properties from the `LecturersFilterDto` to a new
-   * `UsersFilterDto` instance and sets the `roleId` to `'lecturer'`.
+   * @param lecturersFilterDto - An object containing the filter criteria for querying lecturers.
+   *   - `username` (optional): A partial or full username to filter lecturers by.
+   *   - `fullname` (optional): A partial or full fullname to filter lecturers by.
+   *   - `isActive` (optional): A boolean indicating whether to filter by active or inactive lecturers.
    *
-   * @param lecturersFilterDto - The DTO containing filter criteria specific to lecturers.
-   * @returns A `UsersFilterDto` object with the mapped properties and a predefined `roleId`.
+   * @returns A query builder instance configured with the specified filters.
    */
-  private convertToUsersFilterDto(lecturersFilterDto: LecturersFilterDto) {
-    const usersFilterDto = new UsersFilterDto();
+  private findAllQueryBuilder(lecturersFilterDto: LecturersFilterDto) {
+    const query = this.lecturersRepositoty.createQueryBuilder('lecturer');
+    const { username, fullname, isActive } = lecturersFilterDto;
 
-    usersFilterDto.username = lecturersFilterDto.username;
-    usersFilterDto.fullname = lecturersFilterDto.fullname;
-    usersFilterDto.isActive = lecturersFilterDto.isActive;
-    usersFilterDto.page = lecturersFilterDto.page;
-    usersFilterDto.limit = lecturersFilterDto.limit;
-    usersFilterDto.roleId = 'lecturer';
+    if (username) {
+      query.andWhere('lecturer.username ILIKE :username', {
+        username: `%${username}%`,
+      });
+    }
 
-    return usersFilterDto;
+    if (fullname) {
+      query.andWhere('lecturer.fullname ILIKE :fullname', {
+        fullname: `%${fullname}%`,
+      });
+    }
+
+    if (isActive !== undefined) {
+      query.andWhere('lecturer.isActive = :isActive', { isActive });
+    }
+
+    return query;
   }
 
   /**
@@ -46,9 +61,8 @@ export class LecturersService {
    * @returns A promise that resolves to the count of lecturers matching the filter criteria.
    */
   async count(lecturersFilterDto: LecturersFilterDto) {
-    return await this.usersSevice.count(
-      this.convertToUsersFilterDto(lecturersFilterDto),
-    );
+    const query = this.findAllQueryBuilder(lecturersFilterDto);
+    return await query.getCount();
   }
 
   /**
@@ -58,20 +72,10 @@ export class LecturersService {
    * @returns A promise that resolves to an array of users matching the filter criteria.
    */
   async findAll(lecturersFilterDto: LecturersFilterDto) {
-    const users = await this.usersSevice.findAll(
-      this.convertToUsersFilterDto(lecturersFilterDto),
-    );
-
-    const lecturers = users.map((user) => {
-      return {
-        username: user.username,
-        fullname: user.fullname,
-        password: user.password,
-        isActive: user.isActive,
-      };
-    });
-
-    return lecturers;
+    const query = this.findAllQueryBuilder(lecturersFilterDto);
+    const { page, limit } = lecturersFilterDto;
+    query.skip((page - 1) * limit).take(limit);
+    return await query.getMany();
   }
 
   /**
@@ -81,16 +85,9 @@ export class LecturersService {
    * @returns A promise that resolves to the lecturer entity if found, or null if not found.
    */
   async findOne(username: string) {
-    const lecturer = await this.usersRepository.findOne({
-      where: { username, roleId: 'lecturer' },
-      select: {
-        username: true,
-        fullname: true,
-        password: true,
-        isActive: true,
-      },
+    return await this.lecturersRepositoty.findOne({
+      where: { username },
     });
-    return lecturer;
   }
 
   /**
@@ -109,18 +106,17 @@ export class LecturersService {
     const lecturer = await this.usersSevice.findOne(createLecturerDto.username);
     if (lecturer) {
       throw new BadRequestException({
-        message: LecturersMessageError.LECTURER_EXISTS,
+        message: LecturersMessageError.ALREADY_EXISTS,
       });
     }
 
     const hashedPassword = await bcrypt.hash(createLecturerDto.password, 10);
-    const newLecturer = this.usersRepository.create({
+    const newLecturer = this.lecturersRepositoty.create({
       ...createLecturerDto,
       password: hashedPassword,
-      roleId: 'lecturer',
     });
 
-    return await this.usersRepository.insert(newLecturer);
+    return await this.lecturersRepositoty.insert(newLecturer);
   }
 
   /**
@@ -138,8 +134,8 @@ export class LecturersService {
   async update(username: string, updateLecturerDto: UpdateLecturerDto) {
     const lecturer = await this.findOne(username);
     if (!lecturer) {
-      throw new BadRequestException({
-        message: LecturersMessageError.LECTURER_NOT_FOUND,
+      throw new NotFoundException({
+        message: LecturersMessageError.NOT_FOUND,
       });
     }
 
@@ -152,7 +148,7 @@ export class LecturersService {
       lecturer.password = hashedPassword;
     }
 
-    return await this.usersRepository.save(lecturer);
+    return await this.lecturersRepositoty.save(lecturer);
   }
 
   /**
@@ -160,18 +156,23 @@ export class LecturersService {
    *
    * @param username - The username of the lecturer to be deleted.
    * @returns A promise that resolves to the result of the deletion operation.
-   * @throws {BadRequestException} If the lecturer with the given username is not found.
+   * @throws {NotFoundException} If the lecturer with the given username is not found.
+   * @throws {BadRequestException} If an error occurs during the deletion process.
    */
   async delete(username: string) {
     const lecturer = await this.findOne(username);
     if (!lecturer) {
-      throw new BadRequestException({
-        message: LecturersMessageError.LECTURER_NOT_FOUND,
+      throw new NotFoundException({
+        message: LecturersMessageError.NOT_FOUND,
       });
     }
 
-    // TODO: Check if the lecturer is assigned to any courses before deleting
-
-    return await this.usersRepository.delete({ username, roleId: 'lecturer' });
+    try {
+      return await this.lecturersRepositoty.delete({ username });
+    } catch (error) {
+      throw new BadRequestException({
+        message: LecturersMessageError.CANNOT_DELETE,
+      });
+    }
   }
 }

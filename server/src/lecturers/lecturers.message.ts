@@ -9,4 +9,8 @@ export class LecturersMessageSuccess {
 export class LecturersMessageError {
   static readonly LECTURER_EXISTS = 'Giảng viên đã tồn tại';
   static readonly LECTURER_NOT_FOUND = 'Giảng viên không tồn tại';
+
+  static readonly ALREADY_EXISTS = 'Giảng viên đã tồn tại';
+  static readonly NOT_FOUND = 'Giảng viên không tồn tại';
+  static readonly CANNOT_DELETE = 'Không thể xóa giảng viên này';
 }

@@ -20,16 +20,6 @@ export class UsersFilterDto extends PaginationFilterDto {
   fullname?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  course?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  className?: string;
-
-  @IsOptional()
   @TransformBoolean()
   @IsBoolean()
   isSuperuser?: boolean;

@@ -31,8 +31,8 @@ import { StudentsClassesModule } from './students_classes/students_classes.modul
     LecturersModule,
     StudentsModule,
     FacesModule,
-    ClassesModule,
-    StudentsClassesModule,
+    // ClassesModule,
+    // StudentsClassesModule,
   ],
   providers: [],
 })
