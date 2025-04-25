@@ -19,6 +19,7 @@ import { StudentsMessageError } from 'src/students/students.message';
 import { AxiosError } from 'axios';
 import * as pgvector from 'pgvector';
 import { FacesMessageError } from './faces.message';
+import { removeFile } from 'src/utils/file';
 
 @Injectable()
 export class FacesService {
@@ -231,13 +232,7 @@ export class FacesService {
         result.affected !== undefined &&
         result.affected > 0
       ) {
-        unlink(facePath, (err) => {
-          if (err) {
-            throw new InternalServerErrorException({
-              message: 'Xóa ảnh không thành công',
-            });
-          }
-        });
+        removeFile(facePath);
       }
     } catch (error) {}
   }
