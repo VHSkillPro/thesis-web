@@ -32,8 +32,8 @@ import { Role } from 'src/role/role.enum';
 import { RolesGuard } from 'src/role/role.guard';
 import { AuthMessageError } from 'src/auth/auth.message';
 
-@UseGuards(AuthGuard, RolesGuard)
 @Controller('lecturers')
+@UseGuards(AuthGuard, RolesGuard)
 export class LecturersController {
   constructor(private lecturersService: LecturersService) {}
 

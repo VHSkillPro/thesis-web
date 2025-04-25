@@ -28,7 +28,7 @@ import { StudentsClassesModule } from './students_classes/students_classes.modul
     }),
     UsersModule,
     AuthModule,
-    // LecturersModule,
+    LecturersModule,
     StudentsModule,
     FacesModule,
     // ClassesModule,
