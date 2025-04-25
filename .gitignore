@@ -138,3 +138,5 @@ dist
 # python
 __pycache__/
 face/test/
+
+*.onnx
