@@ -7,6 +7,7 @@ import {
   ForbiddenException,
   Get,
   MaxFileSizeValidator,
+  NotFoundException,
   Param,
   ParseFilePipe,
   Patch,
@@ -48,6 +49,15 @@ import { AuthMessageError } from 'src/auth/auth.message';
 export class StudentsController {
   constructor(private studentsService: StudentsService) {}
 
+  private selfCheck(req, studentId: string) {
+    const user = req.user;
+    if (user.roleId === Role.Student && user.username !== studentId) {
+      throw new ForbiddenException({
+        message: AuthMessageError.FORBIDDEN,
+      });
+    }
+  }
+
   @Get()
   @Roles(Role.Admin, Role.Lecturer)
   async findAll(@Query() studentsFilterDto: StudentsFilterDto) {
@@ -55,7 +65,7 @@ export class StudentsController {
     const count = await this.studentsService.count(studentsFilterDto);
 
     return new PaginationResponseDto(
-      StudentsMessageSuccess.FIND_ALL_SUCCESS,
+      StudentsMessageSuccess.FIND_ALL,
       students,
       new PaginationMetaDto(
         count,
@@ -65,54 +75,41 @@ export class StudentsController {
     );
   }
 
-  @Get(':username')
+  @Get(':id')
   @Roles(Role.Admin, Role.Lecturer, Role.Student)
-  async findOne(@Param('username') username: string, @Request() req) {
-    const user = req.user;
-    if (user.roleId === Role.Student && user.username !== username) {
-      throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
-      });
-    }
+  async findOne(@Param('id') studentId: string, @Request() req) {
+    this.selfCheck(req, studentId);
 
-    const student = await this.studentsService.findOne(username);
+    const student = await this.studentsService.findOne(studentId);
     if (!student) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.NOT_FOUND,
       });
     }
 
-    return new ShowResponseDto(
-      StudentsMessageSuccess.FIND_ONE_SUCCESS,
-      student,
-    );
+    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE, student);
   }
 
-  @Get(':username/card/')
+  @Get(':id/card/')
   @Roles(Role.Admin, Role.Lecturer, Role.Student)
   async getCard(
-    @Param('username') username: string,
+    @Param('id') studentId: string,
     @Res() res: Response,
     @Request() req,
   ) {
-    const user = req.user;
-    if (user.roleId === Role.Student && user.username !== username) {
-      throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
-      });
-    }
+    this.selfCheck(req, studentId);
 
-    const student = await this.studentsService.findOne(username);
+    const student = await this.studentsService.findOne(studentId);
     if (!student) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.NOT_FOUND,
       });
     }
 
     const card = student.cardPath;
     if (!card) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_CARD_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.CARD_NOT_FOUND,
       });
     }
 
@@ -124,27 +121,22 @@ export class StudentsController {
     cardStream.pipe(res);
   }
 
-  @Get(':username/card/base64')
+  @Get(':id/card/base64')
   @Roles(Role.Admin, Role.Lecturer, Role.Student)
-  async getCardBase64(@Param('username') username: string, @Request() req) {
-    const user = req.user;
-    if (user.roleId === Role.Student && user.username !== username) {
-      throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
-      });
-    }
+  async getCardBase64(@Param('id') studentId: string, @Request() req) {
+    this.selfCheck(req, studentId);
 
-    const student = await this.studentsService.findOne(username);
+    const student = await this.studentsService.findOne(studentId);
     if (!student) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.NOT_FOUND,
       });
     }
 
     const card = student.cardPath;
     if (!card) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_CARD_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.CARD_NOT_FOUND,
       });
     }
 
@@ -152,7 +144,7 @@ export class StudentsController {
     const cardBuffer = readFileSync(cardPath);
     const base64 = cardBuffer.toString('base64');
 
-    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE_CARD_SUCCESS, {
+    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE_CARD, {
       image: `data:image/jpeg;base64,${base64}`,
     });
   }
@@ -185,10 +177,10 @@ export class StudentsController {
     card: Express.Multer.File,
   ) {
     await this.studentsService.create(createStudentDto, card);
-    return new BaseResponseDto(StudentsMessageSuccess.CREATE_SUCCESS);
+    return new BaseResponseDto(StudentsMessageSuccess.CREATE);
   }
 
-  @Patch(':username')
+  @Patch(':id')
   @Roles(Role.Admin)
   @UseInterceptors(
     FileInterceptor('card', {
@@ -202,7 +194,7 @@ export class StudentsController {
     }),
   )
   async update(
-    @Param('username') username: string,
+    @Param('id') studentId: string,
     @Body() updateStudentDto?: UpdateStudentDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -217,14 +209,14 @@ export class StudentsController {
     )
     card?: Express.Multer.File,
   ) {
-    await this.studentsService.update(username, updateStudentDto, card);
-    return new BaseResponseDto(StudentsMessageSuccess.UPDATE_SUCCESS);
+    await this.studentsService.update(studentId, updateStudentDto, card);
+    return new BaseResponseDto(StudentsMessageSuccess.UPDATE);
   }
 
-  @Delete(':username')
+  @Delete(':id')
   @Roles(Role.Admin)
-  async delete(@Param('username') username: string) {
-    await this.studentsService.delete(username);
-    return new BaseResponseDto(StudentsMessageSuccess.DELETE_SUCCESS);
+  async delete(@Param('id') studentId: string) {
+    await this.studentsService.delete(studentId);
+    return new BaseResponseDto(StudentsMessageSuccess.DELETE);
   }
 }

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { User } from './user.entity';
 import { UsersFilterDto } from './dto/user-filter.dto';
 
 @Injectable()
@@ -12,80 +13,72 @@ export class UsersService {
   ) {}
 
   /**
-   * Builds a query builder to retrieve users based on the provided filter criteria.
+   * Constructs a query builder for retrieving users based on the provided filter criteria.
    *
-   * @param usersFilter - An object containing filter options for querying users:
-   *   - `username` (optional): Filters users by a partial or full username (case-insensitive).
-   *   - `fullname` (optional): Filters users by a partial or full name (case-insensitive).
-   *   - `course` (optional): Filters users by their course (case-insensitive).
-   *   - `className` (optional): Filters users by their class name (case-insensitive).
-   *   - `isActive` (optional): Filters users by their active status.
-   *   - `isSuperuser` (optional): Filters users by their superuser status.
-   *   - `roleId` (optional): Filters users by their associated role ID.
+   * @param usersFilter - An object containing the filter criteria for querying users.
+   *   - `username` (optional): A partial or full username to search for (case-insensitive).
+   *   - `fullname` (optional): A partial or full fullname to search for (case-insensitive).
+   *   - `isActive` (optional): A boolean indicating whether to filter by active users.
+   *   - `isSuperuser` (optional): A boolean indicating whether to filter by superusers.
+   *   - `roleId` (optional): The ID of the role to filter users by.
    *
-   * @returns A query builder instance with the applied filters.
+   * @returns A query builder instance configured with the specified filters.
    */
   private findAllQueryBuilder(usersFilter: UsersFilterDto) {
-    const query = this.usersRepository.createQueryBuilder('users');
-    const { username, isActive, isSuperuser, roleId } = usersFilter;
+    const query = this.usersRepository.createQueryBuilder('user');
+    const { username, fullname, isActive, isSuperuser, roleId } = usersFilter;
 
     if (username) {
-      query.andWhere('users.username ILIKE :username', {
+      query.andWhere('user.username ILIKE :username', {
         username: `%${username}%`,
       });
     }
 
-    if (usersFilter.fullname) {
-      query.andWhere('users.fullname ILIKE :fullname', {
-        fullname: `%${usersFilter.fullname}%`,
-      });
-    }
-
-    if (usersFilter.course) {
-      query.andWhere('users.course ILIKE :course', {
-        course: `%${usersFilter.course}%`,
-      });
-    }
-
-    if (usersFilter.className) {
-      query.andWhere('users.className ILIKE :className', {
-        className: `%${usersFilter.className}%`,
+    if (fullname) {
+      query.andWhere('user.fullname ILIKE :fullname', {
+        fullname: `%${fullname}%`,
       });
     }
 
     if (isSuperuser !== undefined) {
-      query.andWhere('users.isSuperuser = :isSuperuser', { isSuperuser });
+      query.andWhere('user.isSuperuser = :isSuperuser', { isSuperuser });
     }
 
     if (isActive !== undefined) {
-      query.andWhere('users.isActive = :isActive', { isActive });
+      query.andWhere('user.isActive = :isActive', { isActive });
     }
 
     if (roleId) {
-      query.andWhere('users.roleId = :roleId', { roleId: roleId });
+      query.andWhere('user.roleId = :roleId', { roleId: roleId });
     }
 
     return query;
   }
 
   /**
-   * Counts the total number of users that match the given filter criteria.
+   * Counts the number of users that match the specified filter criteria.
    *
-   * @param usersFilter - An object containing filter options such as username, fullname, course, className, isActive, and isSuperuser.
-   * @returns A promise that resolves to the total count of users matching the filter criteria.
+   * @param usersFilter - An object containing the filter criteria for querying users.
+   * @returns A promise that resolves to the total count of users matching the filter.
    */
-  async count(usersFilter: UsersFilterDto): Promise<number> {
+  async count(usersFilter: UsersFilterDto) {
     const query = this.findAllQueryBuilder(usersFilter);
     return await query.getCount();
   }
 
   /**
-   * Retrieves a paginated list of users based on the provided filter criteria.
+   * Retrieves a list of users based on the provided filter criteria.
    *
-   * @param usersFilter - An object containing filter options such as username, fullname, course, className, isActive, isSuperuser, page, and limit.
+   * @param usersFilter - An object containing filtering options such as pagination and other criteria.
    * @returns A promise that resolves to an array of users matching the filter criteria.
+   *
+   * @remarks
+   * - The method uses a query builder to construct the query dynamically based on the filter options.
+   * - Pagination is applied using the `page` and `limit` properties from the `usersFilter` object.
+   * - The `limit` specifies the maximum number of users to retrieve per page.
+   * - The `page` determines the offset for the query, calculated as `(page - 1) * limit`.
    */
-  async findAll(usersFilter: UsersFilterDto): Promise<User[]> {
+  async findAll(usersFilter: UsersFilterDto) {
     const query = this.findAllQueryBuilder(usersFilter);
 
     const { page, limit } = usersFilter;
@@ -96,12 +89,12 @@ export class UsersService {
   }
 
   /**
-   * Finds a single user by their username.
+   * Retrieves a single user by their username.
    *
-   * @param username - The username of the user to retrieve.
+   * @param username - The username of the user to find.
    * @returns A promise that resolves to the user object if found, or `null` if no user exists with the given username.
    */
-  async findOne(username: string): Promise<User | null> {
+  async findOne(username: string) {
     return this.usersRepository.findOne({
       where: {
         username,

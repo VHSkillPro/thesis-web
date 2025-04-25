@@ -1,136 +1,117 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
-import { UsersService } from 'src/users/users.service';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { StudentsFilterDto } from './dto/students-filter.dto';
-import { UsersFilterDto } from 'src/users/dto/user-filter.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { StudentsMessageError } from './students.message';
 import * as bcrypt from 'bcrypt';
 import { unlink } from 'fs';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { join } from 'path';
-import { FacesService } from 'src/faces/faces.service';
+import { Student } from './students.entity';
+import { connectionSource } from 'src/config/typeorm';
+import { Face } from '../faces/faces.entity';
+import { removeFile } from 'src/utils/file';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StudentsService {
   constructor(
-    @InjectRepository(User) private usersRepository: Repository<User>,
-    @Inject(forwardRef(() => FacesService)) private facesService: FacesService,
+    @InjectRepository(Student) private studentsRepository: Repository<Student>,
     private usersService: UsersService,
   ) {}
 
   /**
-   * Converts a `StudentsFilterDto` object into a `UsersFilterDto` object.
+   * Constructs a query builder for retrieving students based on the provided filter criteria.
    *
-   * This method maps the properties of the provided `StudentsFilterDto` to a new
-   * `UsersFilterDto` instance, while also setting the `roleId` property to `'student'`.
+   * @param studentsFilterDto - An object containing filter criteria for querying students.
+   *   - `username` (optional): A partial or full username to filter students by (case-insensitive).
+   *   - `fullname` (optional): A partial or full fullname to filter students by (case-insensitive).
+   *   - `course` (optional): A partial or full course name to filter students by (case-insensitive).
+   *   - `className` (optional): A partial or full class name to filter students by (case-insensitive).
+   *   - `isActive` (optional): A boolean indicating whether to filter by active/inactive students.
    *
-   * @param studentsFilterDto - The DTO containing filter criteria specific to students.
-   * @returns A `UsersFilterDto` object with the mapped properties and a predefined `roleId`.
+   * @returns A query builder instance configured with the specified filters.
    */
-  private convertToUsersFilterDto(studentsFilterDto: StudentsFilterDto) {
-    const usersFilterDto = new UsersFilterDto();
+  private findAllQueryBuilder(studentsFilterDto: StudentsFilterDto) {
+    const query = this.studentsRepository.createQueryBuilder('student');
+    const { username, fullname, course, className, isActive } =
+      studentsFilterDto;
 
-    usersFilterDto.username = studentsFilterDto.username;
-    usersFilterDto.fullname = studentsFilterDto.fullname;
-    usersFilterDto.course = studentsFilterDto.course;
-    usersFilterDto.className = studentsFilterDto.className;
-    usersFilterDto.isActive = studentsFilterDto.isActive;
-    usersFilterDto.page = studentsFilterDto.page;
-    usersFilterDto.limit = studentsFilterDto.limit;
-    usersFilterDto.roleId = 'student';
+    if (username) {
+      query.andWhere('student.username ILIKE :username', {
+        username: `%${username}%`,
+      });
+    }
 
-    return usersFilterDto;
+    if (fullname) {
+      query.andWhere('student.fullname ILIKE :fullname', {
+        fullname: `%${fullname}%`,
+      });
+    }
+
+    if (course) {
+      query.andWhere('student.course ILIKE :course', {
+        course: `%${course}%`,
+      });
+    }
+
+    if (className) {
+      query.andWhere('student.className ILIKE :className', {
+        className: `%${className}%`,
+      });
+    }
+
+    if (isActive !== undefined) {
+      query.andWhere('student.isActive = :isActive', { isActive });
+    }
+
+    return query;
   }
 
   /**
-   * Counts the number of users that match the given student filter criteria.
+   * Counts the total number of students that match the given filter criteria.
    *
-   * @param studentsFilterDto - The filter criteria for selecting students.
-   * @returns A promise that resolves to the count of users matching the filter criteria.
+   * @param studentsFilterDto - An object containing the filter criteria for students.
+   * @returns A promise that resolves to the total count of students matching the filter.
    */
   async count(studentsFilterDto: StudentsFilterDto) {
-    return await this.usersService.count(
-      this.convertToUsersFilterDto(studentsFilterDto),
-    );
+    const query = this.findAllQueryBuilder(studentsFilterDto);
+    return await query.getCount();
   }
 
   /**
-   * Retrieves a list of students based on the provided filter criteria.
+   * Retrieves a paginated list of students based on the provided filter criteria.
    *
-   * @param studentsFilterDto - An object containing the filter criteria for retrieving students.
-   * @returns A promise that resolves to an array of student objects, each containing:
-   * - `username`: The username of the student.
-   * - `password`: The password of the student.
-   * - `fullname`: The full name of the student.
-   * - `course`: The course the student is enrolled in.
-   * - `className`: The class name the student belongs to.
-   * - `isActive`: A boolean indicating whether the student is active.
-   * - `cardPath`: The path to the student's card.
+   * @param studentsFilterDto - An object containing the filter criteria for students.
+   * @returns A promise that resolves to an array of students matching the filter criteria.
    */
   async findAll(studentsFilterDto: StudentsFilterDto) {
-    const users = await this.usersService.findAll(
-      this.convertToUsersFilterDto(studentsFilterDto),
-    );
+    const query = this.findAllQueryBuilder(studentsFilterDto);
 
-    const students = users.map((user) => {
-      return {
-        username: user.username,
-        password: user.password,
-        fullname: user.fullname,
-        course: user.course,
-        className: user.className,
-        isActive: user.isActive,
-        cardPath: user.cardPath,
-      };
-    });
+    const { page, limit } = studentsFilterDto;
+    const offset = (page - 1) * limit;
+    query.skip(offset).take(limit);
 
-    return students;
+    return await query.getMany();
   }
 
   /**
-   * Retrieves a single student user by their username.
+   * Retrieves a single student record based on the provided username.
    *
    * @param username - The username of the student to retrieve.
-   * @returns A promise that resolves to the student user object if found,
-   *          or `null` if no matching user is found.
-   *
-   * The returned user object includes the following fields:
-   * - `username`: The username of the student.
-   * - `password`: The hashed password of the student.
-   * - `fullname`: The full name of the student.
-   * - `course`: The course the student is enrolled in.
-   * - `className`: The class name associated with the student.
-   * - `isActive`: A boolean indicating whether the student is active.
-   * - `cardPath`: The file path to the student's card.
-   *
-   * Note: This method filters users by the role ID of 'student'.
+   * @returns A promise that resolves to the student entity if found, or `null` if no matching student exists.
    */
   async findOne(username: string) {
-    const user = await this.usersRepository.findOne({
-      where: {
-        username: username,
-        roleId: 'student',
-      },
-      select: {
-        username: true,
-        password: true,
-        fullname: true,
-        course: true,
-        className: true,
-        isActive: true,
-        cardPath: true,
-      },
+    const student = await this.studentsRepository.findOne({
+      where: { username: username },
     });
-    return user;
+    return student;
   }
 
   /**
@@ -142,40 +123,42 @@ export class StudentsService {
    * @throws {BadRequestException} If a student with the given username already exists.
    */
   async create(createStudentDto: CreateStudentDto, card: Express.Multer.File) {
-    const student = await this.usersService.findOne(createStudentDto.username);
-    if (student) {
-      unlink(card.path, (err) => {});
+    const user = await this.usersService.findOne(createStudentDto.username);
+    if (user) {
+      removeFile(card.path);
       throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_EXISTS,
+        message: StudentsMessageError.ALREADY_EXISTS,
       });
     }
 
     const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
-    const newStudent = this.usersRepository.create({
-      username: createStudentDto.username,
+    const newStudent = this.studentsRepository.create({
+      ...createStudentDto,
       password: hashedPassword,
-      fullname: createStudentDto.fullname,
-      course: createStudentDto.course,
-      className: createStudentDto.className,
-      isActive: true,
       cardPath: card.path,
-      roleId: 'student',
     });
 
-    return await this.usersRepository.insert(newStudent);
+    try {
+      return await this.studentsRepository.insert(newStudent);
+    } catch (error) {
+      console.log(error);
+      removeFile(card.path);
+      throw new InternalServerErrorException({
+        message: 'Lỗi khi tạo sinh viên',
+      });
+    }
   }
 
   /**
-   * Updates a student's information based on the provided username and update data.
-   * Optionally updates the student's card file if provided.
+   * Updates a student's information, including optional fields such as password and card file.
    *
    * @param username - The username of the student to update.
-   * @param updateStudentDto - An object containing the updated student data.
-   * @param card - (Optional) A file object representing the new card to associate with the student.
+   * @param updateStudentDto - An optional object containing the updated student details.
+   * @param card - An optional file object representing the student's card.
    *
-   * @throws {BadRequestException} If the student with the given username is not found.
+   * @returns The updated student entity after saving to the repository.
    *
-   * @returns A promise that resolves to the updated student entity.
+   * @throws {NotFoundException} If the student with the given username is not found.
    */
   async update(
     username: string,
@@ -184,80 +167,76 @@ export class StudentsService {
   ) {
     const student = await this.findOne(username);
     if (!student) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.NOT_FOUND,
       });
     }
 
-    if (updateStudentDto?.password) {
-      const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
-      updateStudentDto.password = hashedPassword;
-    }
-
-    const updatedStudent = this.usersRepository.create({
+    const newStudent = await this.studentsRepository.create({
       ...student,
       ...updateStudentDto,
     });
 
-    if (card) {
-      updatedStudent.cardPath = card.path;
-      if (student.cardPath) {
-        unlink(student.cardPath, (err) => {
-          console.log('Error deleting file:', err);
-        });
-      }
+    if (updateStudentDto?.password) {
+      const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
+      newStudent.password = hashedPassword;
     }
 
-    return await this.usersRepository.save(updatedStudent);
+    if (card) {
+      if (newStudent.cardPath) {
+        removeFile(newStudent.cardPath);
+      }
+      newStudent.cardPath = card.path;
+    }
+
+    return await this.studentsRepository.save(newStudent);
   }
 
   /**
-   * Deletes a student record based on the provided username.
+   * Deletes a student and their associated data from the database.
    *
    * @param username - The username of the student to be deleted.
-   * @returns A promise resolving to the result of the delete operation.
-   * @throws {BadRequestException} If the student with the given username is not found.
+   * @throws {NotFoundException} If the student with the given username is not found.
+   *
+   * This method performs the following actions within a database transaction:
+   * - Deletes the student record from the database.
+   * - Deletes all associated face records linked to the student.
+   * - Deletes the student's card file from the filesystem, if it exists.
+   *
+   * Note: The deletion of the associated student of a class is currently not implemented (TODO).
    */
   async delete(username: string) {
     const student = await this.findOne(username);
     if (!student) {
-      throw new BadRequestException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+      throw new NotFoundException({
+        message: StudentsMessageError.NOT_FOUND,
       });
     }
 
-    // TODO: Check if student is assigned to any classes
+    return await (
+      await connectionSource.initialize()
+    ).transaction(async (manager) => {
+      const cardPath =
+        student.cardPath !== undefined
+          ? join(__dirname, '..', '..', student.cardPath)
+          : undefined;
 
-    const cardPath =
-      student.cardPath !== undefined
-        ? join(__dirname, '..', '..', student.cardPath)
-        : undefined;
-    const result = await this.usersRepository.delete({
-      username: username,
-      roleId: 'student',
-    });
+      // Delete the student
+      await manager.delete(Student, {
+        username: username,
+      });
 
-    if (
-      result.affected !== null &&
-      result.affected !== undefined &&
-      result.affected > 0
-    ) {
+      // Delete the associated faces
+      await manager.delete(Face, {
+        studentId: student.id,
+      });
+
+      // TODO: Delete the associated student of class
+
+      // Delete the card file if it exists
       if (cardPath) {
-        unlink(cardPath, (err) => {
-          console.log('Error deleting file:', err);
-        });
+        removeFile(cardPath);
       }
-
-      const faces = await this.facesService.findAll(username);
-      for (const face of faces) {
-        await this.facesService.delete(username, face.id);
-      }
-    } else {
-      throw new InternalServerErrorException({
-        message: StudentsMessageError.STUDENT_NOT_DELETED,
-      });
-    }
-
-    return result;
+    });
   }
 }

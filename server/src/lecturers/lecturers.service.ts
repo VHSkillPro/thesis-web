@@ -82,7 +82,7 @@ export class LecturersService {
    */
   async findOne(username: string) {
     const lecturer = await this.usersRepository.findOne({
-      where: { username, roleId: 'lecturer' },
+      where: { username },
       select: {
         username: true,
         fullname: true,
@@ -117,7 +117,6 @@ export class LecturersService {
     const newLecturer = this.usersRepository.create({
       ...createLecturerDto,
       password: hashedPassword,
-      roleId: 'lecturer',
     });
 
     return await this.usersRepository.insert(newLecturer);
@@ -172,6 +171,6 @@ export class LecturersService {
 
     // TODO: Check if the lecturer is assigned to any courses before deleting
 
-    return await this.usersRepository.delete({ username, roleId: 'lecturer' });
+    return await this.usersRepository.delete({ username });
   }
 }
