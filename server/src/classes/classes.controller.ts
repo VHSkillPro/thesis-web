@@ -2,8 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
+  Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -24,6 +27,7 @@ import { ClassesMessageError, ClassesMessageSuccess } from './classes.message';
 import { CreateClassDto } from './dto/create-class.dto';
 import { LecturersService } from 'src/lecturers/lecturers.service';
 import { LecturersMessageError } from 'src/lecturers/lecturers.message';
+import { UpdateClassDto } from './dto/update-class.dto';
 
 @Controller('classes')
 @UseGuards(AuthGuard, RolesGuard)
@@ -48,7 +52,7 @@ export class ClassesController {
 
   @Get(':id')
   @Roles(Role.Admin, Role.Lecturer)
-  async findOne(@Query('id') id: string) {
+  async findOne(@Param('id') id: string) {
     const classData = await this.classesService.findOne(id);
     if (!classData) {
       throw new NotFoundException({
@@ -81,5 +85,22 @@ export class ClassesController {
 
     const newClass = await this.classesService.create(createClassDto);
     return new BaseResponseDto(ClassesMessageSuccess.CREATE);
+  }
+
+  @Patch(':id')
+  @Roles(Role.Admin)
+  async update(
+    @Param('id') id: string,
+    @Body() updateClassDto: UpdateClassDto,
+  ) {
+    await this.classesService.update(id, updateClassDto);
+    return new BaseResponseDto(ClassesMessageSuccess.UPDATE);
+  }
+
+  @Delete(':id')
+  @Roles(Role.Admin)
+  async delete(@Param('id') id: string) {
+    await this.classesService.delete(id);
+    return new BaseResponseDto(ClassesMessageSuccess.DELETE);
   }
 }

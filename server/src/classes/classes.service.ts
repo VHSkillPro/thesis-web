@@ -1,14 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Class } from './classes.entity';
 import { Repository } from 'typeorm';
 import { ClassesFilterDto } from './dto/classes-filter.dto';
 import { CreateClassDto } from './dto/create-class.dto';
+import { ClassesMessageError } from './classes.message';
+import { UpdateClassDto } from './dto/update-class.dto';
+import { LecturersService } from 'src/lecturers/lecturers.service';
+import { LecturersMessageError } from 'src/lecturers/lecturers.message';
 
 @Injectable()
 export class ClassesService {
   constructor(
     @InjectRepository(Class) private classesRepository: Repository<Class>,
+    private lecturersService: LecturersService,
   ) {}
 
   /**
@@ -96,5 +101,73 @@ export class ClassesService {
   async create(classData: CreateClassDto) {
     const newClass = this.classesRepository.create(classData);
     return await this.classesRepository.insert(newClass);
+  }
+
+  /**
+   * Updates an existing class with the provided data.
+   *
+   * @param id - The unique identifier of the class to update.
+   * @param classData - An object containing the updated class data.
+   *   - `name` (optional): The new name of the class.
+   *   - `lecturerId` (optional): The ID of the lecturer to associate with the class.
+   *
+   * @throws {BadRequestException} If the class with the given ID is not found.
+   * @throws {BadRequestException} If the provided lecturer ID does not correspond to an existing lecturer.
+   *
+   * @returns A promise that resolves to the updated class entity.
+   */
+  async update(id: string, classData: UpdateClassDto) {
+    const classToUpdate = await this.findOne(id);
+    if (!classToUpdate) {
+      throw new BadRequestException({
+        message: ClassesMessageError.NOT_FOUND,
+      });
+    }
+
+    // Update name if provided
+    if (classData?.name) {
+      classToUpdate.name = classData.name;
+    }
+
+    // Update lecturerId if provided
+    if (classData?.lecturerId) {
+      const lecturer = await this.lecturersService.findOne(
+        classData.lecturerId,
+      );
+      if (!lecturer) {
+        throw new BadRequestException({
+          message: LecturersMessageError.LECTURER_NOT_FOUND,
+        });
+      }
+
+      classToUpdate.lecturerId = classData.lecturerId;
+    }
+
+    return await this.classesRepository.update(id, classToUpdate);
+  }
+
+  /**
+   * Deletes a class by its unique identifier.
+   *
+   * This method first checks if the class exists by attempting to retrieve it.
+   * If the class is not found, a `BadRequestException` is thrown with an appropriate error message.
+   *
+   * TODO: Implement logic to delete all students enrolled in the class before deleting the class itself.
+   *
+   * @param id - The unique identifier of the class to be deleted.
+   * @returns A promise that resolves to the result of the deletion operation.
+   * @throws BadRequestException if the class with the given ID is not found.
+   */
+  async delete(id: string) {
+    const classToDelete = await this.findOne(id);
+    if (!classToDelete) {
+      throw new BadRequestException({
+        message: ClassesMessageError.NOT_FOUND,
+      });
+    }
+
+    // TODO: Delete all students enrolled in the class
+
+    return await this.classesRepository.delete(id);
   }
 }
