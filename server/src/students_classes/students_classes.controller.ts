@@ -1,11 +1,15 @@
-import { Body, Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { StudentsClassesService } from './students_classes.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { RolesGuard } from 'src/role/role.guard';
 import { Roles } from 'src/role/role.decorator';
 import { Role } from 'src/role/role.enum';
 import { StudentsFilterDto } from 'src/students/dto/students-filter.dto';
-import { PaginationMetaDto, PaginationResponseDto } from 'src/dto/response.dto';
+import {
+  BaseResponseDto,
+  PaginationMetaDto,
+  PaginationResponseDto,
+} from 'src/dto/response.dto';
 import { StudentsClassesMessageSuccess } from './students_classes.message';
 
 @Controller('classes/:id/students')
@@ -37,5 +41,15 @@ export class StudentsClassesController {
         studentsFilterDto.limit,
       ),
     );
+  }
+
+  @Post(':studentId')
+  @Roles(Role.Admin)
+  async create(
+    @Param('id') classId: string,
+    @Param('studentId') studentId: string,
+  ) {
+    await this.studentsClassesService.create(classId, studentId);
+    return new BaseResponseDto(StudentsClassesMessageSuccess.CREATE);
   }
 }
