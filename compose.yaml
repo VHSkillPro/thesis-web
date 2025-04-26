@@ -61,7 +61,27 @@ services:
         networks:
             - postgres
 
+    client: 
+        container_name: client
+        build: 
+          context: ./client
+          dockerfile: Dockerfile
+          target: dev
+        command: yarn dev
+        volumes:
+            - ./client/:/app/
+            - ./client/package.json:/app/package.json
+            - ./client/package-lock.json:/app/package-lock.json
+            - client:/app/node_modules
+        ports:
+            - 80:3000
+        environment:
+            WATCHPACK_POLLING: true
+        networks:
+            - postgres
+
 volumes:
+    client:
     server:
     server-uploads:
     pgdata:
