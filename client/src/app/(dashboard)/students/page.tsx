@@ -63,7 +63,12 @@ const columns: TableProps<DataType>["columns"] = [
     ),
   },
   {
-    title: "Thao tác",
+    title: (
+      <>
+        <EditOutlined style={{ marginRight: 5 }} />
+        Thao tác
+      </>
+    ),
     key: "action",
     render: (_, record) => (
       <span>

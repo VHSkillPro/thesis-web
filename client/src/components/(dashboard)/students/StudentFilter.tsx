@@ -1,5 +1,6 @@
 "use client";
 import { StudentFilter } from "@/app/(dashboard)/students/action";
+import { SearchOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Select } from "antd";
 
 interface StudentFilterForm {
@@ -100,6 +101,7 @@ export default function StudentFilterComponent(props: StudentFilterProps) {
 
       <Form.Item style={{ display: "flex", alignItems: "end" }}>
         <Button variant="filled" color="primary" htmlType="submit">
+          <SearchOutlined />
           Tìm kiếm
         </Button>
       </Form.Item>
