@@ -6,18 +6,30 @@ import loginAction, { LoginFormData } from "./action";
 import { useNotification } from "@/context/NotificationContext";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { User } from "@/types/user";
 
 export default function Login() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const { notifySuccess, notifyError } = useNotification();
+    const { login } = useAuth();
 
     const onFinish = async (formData: LoginFormData) => {
         setLoading(true);
         const response = await loginAction(formData);
         if (response.success) {
-            notifySuccess(response.message);
-            router.push("/");
+            try {
+                const meResponse = await fetch("/api/auth/me");
+                const json = await meResponse.json();
+                if (json.success) {
+                    login(json.data as User);
+                    notifySuccess(response.message);
+                    router.push("/");
+                }
+            } catch (error) {
+                notifyError("Đã xảy ra lỗi khi lấy thông tin người dùng.");
+            }
         } else {
             notifyError(response.message);
         }

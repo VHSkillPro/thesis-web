@@ -6,6 +6,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { Suspense } from "react";
 import Loading from "./loading";
+import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -34,7 +35,11 @@ export default function RootLayout({
             >
                 <AntdRegistry>
                     <NotificationProvider>
-                        <Suspense fallback={<Loading />}>{children}</Suspense>
+                        <AuthProvider>
+                            <Suspense fallback={<Loading />}>
+                                {children}
+                            </Suspense>
+                        </AuthProvider>
                     </NotificationProvider>
                 </AntdRegistry>
             </body>

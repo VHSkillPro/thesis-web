@@ -1,12 +1,27 @@
 "use client";
+import UserDropdown from "@/components/UserDropdown";
+import { gray, red } from "@ant-design/colors";
 import {
+    DownOutlined,
+    LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    SettingOutlined,
     UploadOutlined,
     UserOutlined,
     VideoCameraOutlined,
 } from "@ant-design/icons";
-import { Button, Layout, Menu, theme } from "antd";
+import {
+    Button,
+    ColorPicker,
+    Dropdown,
+    Layout,
+    Menu,
+    MenuProps,
+    Space,
+    theme,
+    Typography,
+} from "antd";
 import { Content, Footer, Header } from "antd/es/layout/layout";
 import Sider from "antd/es/layout/Sider";
 import { useState } from "react";
@@ -22,6 +37,24 @@ const siderStyle: React.CSSProperties = {
     scrollbarGutter: "stable",
 };
 
+const items: MenuProps["items"] = [
+    {
+        key: "1",
+        label: "Thông tin cá nhân",
+        icon: <UserOutlined />,
+        style: { fontWeight: "bold" },
+    },
+    {
+        type: "divider",
+    },
+    {
+        key: "2",
+        label: "Đăng xuất",
+        icon: <LogoutOutlined />,
+        style: { color: red[5] },
+    },
+];
+
 export default function Home() {
     const [collapsed, setCollapsed] = useState(false);
     const {
@@ -36,7 +69,27 @@ export default function Home() {
                 collapsed={collapsed}
                 style={siderStyle}
             >
-                <div className="demo-logo-vertical" />
+                <Space
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        letterSpacing: 1.5,
+                        transition: "all 0.2s",
+                    }}
+                    hidden={collapsed}
+                >
+                    <Typography.Title
+                        level={1}
+                        style={{
+                            color: "#d9d9d9",
+                            textAlign: "center",
+                            marginTop: 16,
+                        }}
+                    >
+                        MSAA
+                    </Typography.Title>
+                </Space>
                 <Menu
                     theme="dark"
                     mode="inline"
@@ -45,7 +98,8 @@ export default function Home() {
                         {
                             key: "1",
                             icon: <UserOutlined />,
-                            label: "nav 1",
+                            label: "Sinh viên",
+                            style: { fontWeight: "bold" },
                         },
                         {
                             key: "2",
@@ -61,7 +115,14 @@ export default function Home() {
                 />
             </Sider>
             <Layout>
-                <Header style={{ padding: 0, background: colorBgContainer }}>
+                <Header
+                    style={{
+                        padding: 0,
+                        background: colorBgContainer,
+                        display: "flex",
+                        justifyContent: "space-between",
+                    }}
+                >
                     <Button
                         type="text"
                         icon={
@@ -78,6 +139,7 @@ export default function Home() {
                             height: 64,
                         }}
                     />
+                    <UserDropdown />
                 </Header>
                 <Content
                     style={{

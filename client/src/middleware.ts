@@ -9,8 +9,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+         * - 500 (error page)
          */
-        "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|500).*)",
     ],
 };
 
@@ -27,33 +28,42 @@ interface MeResponse {
 }
 
 /**
- * Fetches the profile information of the authenticated user.
+ * Fetches the profile information of the authenticated user using the provided access token.
  *
- * @param accessToken - The access token used for authentication. If undefined, the request will not include an Authorization header.
- * @returns A promise that resolves to an object containing:
+ * @param accessToken - The access token used for authentication in the request.
+ * @returns A promise that resolves to a `MeResponse` object containing:
  * - `success`: A boolean indicating whether the request was successful.
- * - `message`: A string containing a message from the server.
- * - `data`: The profile data of the authenticated user, if available.
+ * - `message`: A string message describing the result of the request.
+ * - `data`: The user's profile data if the request was successful, or `undefined` otherwise.
  * - `statusCode`: The HTTP status code of the response.
  *
- * @throws Will throw an error if the fetch request fails or the response cannot be parsed as JSON.
+ * If an error occurs during the request, the function returns a `MeResponse` object
+ * with `success` set to `false`, a generic error message, and a status code of 500.
  */
 async function getProfile(accessToken: string) {
-    const response = await fetch(`${BASE_URL}/auth/me`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
+    try {
+        const response = await fetch(`${BASE_URL}/auth/me`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
 
-    const json = await response.json();
-    return {
-        success: response.ok,
-        message: json.message,
-        data: json?.data,
-        statusCode: response.status,
-    } as MeResponse;
+        const json = await response.json();
+        return {
+            success: response.ok,
+            message: json.message,
+            data: json?.data,
+            statusCode: response.status,
+        } as MeResponse;
+    } catch (error) {
+        return {
+            success: false,
+            message: "Máy chủ không phản hồi",
+            statusCode: 500,
+        } as MeResponse;
+    }
 }
 
 interface RefreshResponse {
@@ -67,33 +77,43 @@ interface RefreshResponse {
 }
 
 /**
- * Sends a request to refresh authentication tokens using the provided refresh token.
+ * Refreshes the authentication tokens by sending a request to the server.
  *
  * @param refreshToken - The refresh token used to obtain new authentication tokens.
  * @returns A promise that resolves to a `RefreshResponse` object containing:
- * - `success`: A boolean indicating whether the request was successful.
- * - `message`: A string message from the server.
- * - `data`: The refreshed token data, if available.
+ * - `success`: A boolean indicating whether the operation was successful.
+ * - `message`: A string message providing additional information about the result.
+ * - `data`: The refreshed token data, if the operation was successful.
  * - `statusCode`: The HTTP status code of the response.
  *
- * @throws Will propagate any network or server errors encountered during the request.
+ * If the server does not respond or an error occurs, the function returns a
+ * `RefreshResponse` object with `success` set to `false`, a default error message,
+ * and a status code of 500.
  */
 async function refreshTokens(refreshToken: string) {
-    const response = await fetch(`${BASE_URL}/auth/refresh`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refreshToken }),
-    });
+    try {
+        const response = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refreshToken }),
+        });
 
-    const json = await response.json();
-    return {
-        success: response.ok,
-        message: json.message,
-        data: json?.data,
-        statusCode: response.status,
-    } as RefreshResponse;
+        const json = await response.json();
+        return {
+            success: response.ok,
+            message: json.message,
+            data: json?.data,
+            statusCode: response.status,
+        } as RefreshResponse;
+    } catch (error) {
+        return {
+            success: false,
+            message: "Máy chủ không phản hồi",
+            statusCode: 500,
+        } as RefreshResponse;
+    }
 }
 
 /**

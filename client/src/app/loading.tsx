@@ -1,9 +1,18 @@
-import { Flex, Spin } from "antd";
+import { Flex, Space, Spin } from "antd";
 
 export default function Loading() {
     return (
-        <Flex align="center" gap="middle">
-            <Spin size="large" />
-        </Flex>
+        <Space
+            style={{
+                height: "100vh",
+                width: "100vw",
+                justifyContent: "center",
+                alignItems: "center",
+            }}
+        >
+            <Flex align="center" gap="middle">
+                <Spin size="large" />
+            </Flex>
+        </Space>
     );
 }
