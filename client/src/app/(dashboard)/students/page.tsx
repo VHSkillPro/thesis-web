@@ -1,14 +1,28 @@
 "use client";
-import { Badge, Button, Image, Row, Table, TableProps, Typography } from "antd";
+import {
+  Badge,
+  Button,
+  Col,
+  Image,
+  Row,
+  Table,
+  TableProps,
+  Typography,
+} from "antd";
 import { useEffect, useState } from "react";
 import getStudentsAction, {
   getCardOfStudentAction,
   StudentFilter,
 } from "./action";
 import { useNotification } from "@/context/NotificationContext";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
 import Meta from "@/types/meta";
 import StudentFilterComponent from "@/components/(dashboard)/students/StudentFilter";
+import { useRouter } from "next/navigation";
 
 interface DataType {
   key: string;
@@ -86,6 +100,7 @@ const columns: TableProps<DataType>["columns"] = [
 ];
 
 export default function Page() {
+  const router = useRouter();
   const [isFetching, setIsFetching] = useState(false);
   const { notifyError } = useNotification();
 
@@ -139,10 +154,22 @@ export default function Page() {
         <Typography.Title>Danh sách sinh viên</Typography.Title>
       </Row>
       <Row>
-        <StudentFilterComponent
-          filter={studentsFilter}
-          setFilter={setStudentsFilter}
-        ></StudentFilterComponent>
+        <Col>
+          <StudentFilterComponent
+            filter={studentsFilter}
+            setFilter={setStudentsFilter}
+          ></StudentFilterComponent>
+        </Col>
+        <Col style={{ marginLeft: "auto", display: "flex", alignItems: "end" }}>
+          <Button
+            color="primary"
+            variant="solid"
+            onClick={() => router.push("/students/create")}
+          >
+            <UserAddOutlined></UserAddOutlined>
+            Thêm sinh viên
+          </Button>
+        </Col>
       </Row>
       <Table<DataType>
         style={{ marginTop: 16 }}

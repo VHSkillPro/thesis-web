@@ -81,10 +81,10 @@ export default function StudentFilterComponent(props: StudentFilterProps) {
         name="isActive"
         layout="vertical"
         style={{ width: 120 }}
+        initialValue={"all"}
       >
         <Select
           placeholder="Chọn trạng thái sinh viên"
-          defaultValue={"all"}
           options={[
             {
               value: "all",
