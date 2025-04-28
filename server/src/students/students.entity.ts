@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Role } from 'src/role/role.enum';
 import { AbstractUser } from 'src/users/user.entity';
 import { ChildEntity, Column } from 'typeorm';
@@ -18,6 +19,7 @@ export class Student extends AbstractUser {
   @Column({ type: 'character varying', name: 'class_name', length: 255 })
   className: string;
 
+  @Exclude()
   @Column({ name: 'card_path', type: 'text' })
   cardPath: string;
 }

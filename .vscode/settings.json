@@ -1,4 +1,7 @@
 {
     "git.ignoreLimitWarning": true,
-    "editor.indentSize": 2
+    "editor.indentSize": 2,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
 }

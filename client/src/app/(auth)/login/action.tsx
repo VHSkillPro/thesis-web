@@ -1,5 +1,5 @@
 "use server";
-import { BASE_URL } from "../../config";
+import { BASE_URL } from "../../../config";
 import { cookies } from "next/headers";
 
 export interface LoginFormData {
