@@ -213,9 +213,11 @@ export class StudentsService {
       });
     }
 
-    return await (
-      await connectionSource.initialize()
-    ).transaction(async (manager) => {
+    if (!connectionSource.isInitialized) {
+      await connectionSource.initialize();
+    }
+
+    return await connectionSource.transaction(async (manager) => {
       const cardPath =
         student.cardPath !== undefined
           ? join(__dirname, '..', '..', student.cardPath)

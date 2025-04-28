@@ -174,9 +174,11 @@ export class ClassesService {
       });
     }
 
-    return await (
-      await connectionSource.initialize()
-    ).transaction(async (manager) => {
+    if (!connectionSource.isInitialized) {
+      await connectionSource.initialize();
+    }
+
+    return await connectionSource.transaction(async (manager) => {
       // Delete all students enrolled in the class
       await manager.delete(StudentsClasses, {
         classId: id,
