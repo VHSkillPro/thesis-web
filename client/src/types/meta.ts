@@ -4,3 +4,9 @@ export default interface Meta {
     limit: number;
     pages: number;
 }
+export interface MetaDto {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+}
