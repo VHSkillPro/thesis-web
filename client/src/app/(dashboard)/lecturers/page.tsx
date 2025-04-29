@@ -6,6 +6,7 @@ import { useNotification } from "@/context/NotificationContext";
 import { MetaDto } from "@/types/meta";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import LecturersFilter from "@/components/(dashboard)/lecturers/LecturersFilter";
 
 interface DataType {
   key: string;
@@ -137,6 +138,10 @@ export default function LecturersPage() {
   return (
     <>
       <Typography.Title>Danh sách giảng viên</Typography.Title>
+      <LecturersFilter
+        lecturersFilter={lecturersFilter}
+        setLecturersFilter={setLecturersFilter}
+      />
       <Table
         style={{ marginTop: 16 }}
         columns={columns}
