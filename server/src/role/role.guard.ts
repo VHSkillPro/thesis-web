@@ -8,7 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from './role.enum';
 import { ROLES_KEY } from './role.decorator';
-import { AuthMessageError } from 'src/auth/auth.message';
+import AuthMessage from 'src/auth/auth.message';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,14 +27,14 @@ export class RolesGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest();
     if (!user) {
       throw new UnauthorizedException({
-        message: AuthMessageError.UNAUTHORIZED,
+        message: AuthMessage.ERROR.UNAUTHORIZED,
       });
     }
 
     const result = requiredRoles.some((role) => user.roleId === role);
     if (!result) {
       throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
+        message: AuthMessage.ERROR.FORBIDDEN,
       });
     }
 
