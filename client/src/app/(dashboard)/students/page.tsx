@@ -188,7 +188,11 @@ export default function Page() {
       key: "action",
       render: (_, record) => (
         <span>
-          <Button color="primary" variant="filled">
+          <Button
+            color="primary"
+            variant="filled"
+            onClick={() => router.push(`/students/${record.username}`)}
+          >
             <EditOutlined></EditOutlined>
             Chỉnh sửa
           </Button>
