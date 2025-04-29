@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { AuthMessageError } from './auth.message';
+import AuthMessage from './auth.message';
 import { UsersService } from 'src/users/users.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokensDto } from './dto/tokens.dto';
@@ -28,13 +28,13 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException({
-        message: AuthMessageError.WRONG_USERNAME_OR_PASSWORD,
+        message: AuthMessage.ERROR.WRONG_USERNAME_OR_PASSWORD,
       });
     }
 
     if (!user.isActive) {
       throw new UnauthorizedException({
-        message: AuthMessageError.USER_NOT_ACTIVE,
+        message: AuthMessage.ERROR.USER_NOT_ACTIVE,
       });
     }
 
@@ -95,7 +95,7 @@ export class AuthService {
       return new TokensDto(accessToken, newRefreshToken);
     } catch {
       throw new UnauthorizedException({
-        message: AuthMessageError.UNAUTHORIZED,
+        message: AuthMessage.ERROR.UNAUTHORIZED,
       });
     }
   }

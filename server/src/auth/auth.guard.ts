@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { AuthMessageError } from './auth.message';
+import AuthMessage from './auth.message';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
     if (!token) {
       throw new UnauthorizedException({
-        message: AuthMessageError.UNAUTHORIZED,
+        message: AuthMessage.ERROR.UNAUTHORIZED,
       });
     }
 
@@ -45,7 +45,7 @@ export class AuthGuard implements CanActivate {
 
       if (payload.isActive === false) {
         throw new UnauthorizedException({
-          message: AuthMessageError.UNAUTHORIZED,
+          message: AuthMessage.ERROR.UNAUTHORIZED,
         });
       }
 
@@ -54,7 +54,7 @@ export class AuthGuard implements CanActivate {
       request['user'] = { ...payload };
     } catch {
       throw new UnauthorizedException({
-        message: AuthMessageError.UNAUTHORIZED,
+        message: AuthMessage.ERROR.UNAUTHORIZED,
       });
     }
 
