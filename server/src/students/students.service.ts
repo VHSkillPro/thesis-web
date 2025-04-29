@@ -71,6 +71,7 @@ export class StudentsService {
       query.andWhere('student.isActive = :isActive', { isActive });
     }
 
+    query.orderBy('student.username', 'ASC');
     return query;
   }
 
