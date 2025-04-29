@@ -1,10 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Badge, Button, Popconfirm, Table, TableProps, Typography } from "antd";
+import {
+  Badge,
+  Button,
+  Col,
+  Popconfirm,
+  Row,
+  Table,
+  TableProps,
+  Typography,
+} from "antd";
 import getLecturersAction, { FilterLecturerDto, LecturerDto } from "./action";
 import { useNotification } from "@/context/NotificationContext";
 import { MetaDto } from "@/types/meta";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import LecturersFilter from "@/components/(dashboard)/lecturers/LecturersFilter";
 
@@ -138,10 +151,27 @@ export default function LecturersPage() {
   return (
     <>
       <Typography.Title>Danh sách giảng viên</Typography.Title>
-      <LecturersFilter
-        lecturersFilter={lecturersFilter}
-        setLecturersFilter={setLecturersFilter}
-      />
+      <Row>
+        <Col span={20}>
+          <LecturersFilter
+            lecturersFilter={lecturersFilter}
+            setLecturersFilter={setLecturersFilter}
+          />
+        </Col>
+        <Col
+          style={{ display: "flex", alignItems: "end", justifyContent: "end" }}
+          span={4}
+        >
+          <Button
+            color="primary"
+            variant="solid"
+            onClick={() => router.push("/lecturers/create")}
+          >
+            <UserAddOutlined></UserAddOutlined>
+            Thêm giảng viên
+          </Button>
+        </Col>
+      </Row>
       <Table
         style={{ marginTop: 16 }}
         columns={columns}
