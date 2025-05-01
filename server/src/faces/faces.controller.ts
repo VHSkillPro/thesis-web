@@ -17,7 +17,9 @@ import {
 } from '@nestjs/common';
 import { FacesService } from './faces.service';
 import { StudentsService } from 'src/students/students.service';
-import { StudentsMessageError } from 'src/students/students.message';
+import StudentsMessage, {
+  StudentsMessageError,
+} from 'src/students/students.message';
 import {
   BaseResponseDto,
   PaginationMetaDto,
@@ -35,6 +37,7 @@ import { diskStorage } from 'multer';
 import { join } from 'path';
 import { createReadStream, readFileSync } from 'fs';
 import { Response } from 'express';
+import FacesMessage from './faces.message';
 
 @Controller('/students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -61,13 +64,13 @@ export class FacesController {
     const student = await this.studentsService.findOne(username);
     if (!student) {
       throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+        message: StudentsMessage.ERROR.NOT_FOUND,
       });
     }
 
     const faces = await this.facesService.findAll(username);
     return new PaginationResponseDto(
-      FacesMessageSuccess.FIND_ALL_SUCCESS,
+      FacesMessage.SUCCESS.FIND_ALL,
       faces,
       new PaginationMetaDto(faces.length, 1, faces.length),
     );
@@ -79,62 +82,24 @@ export class FacesController {
     @Param('username') username: string,
     @Param('id') id: number,
     @Request() req,
-    @Res() res: Response,
   ) {
     this.selfCheck(req, username);
 
     const student = await this.studentsService.findOne(username);
     if (!student) {
       throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
+        message: StudentsMessage.ERROR.NOT_FOUND,
       });
     }
 
-    const face = await this.facesService.findOne(id);
+    const face = await this.facesService.findOne(username, id);
     if (!face) {
       throw new NotFoundException({
-        message: FacesMessageError.FACE_NOT_FOUND,
+        message: FacesMessage.ERROR.NOT_FOUND,
       });
     }
 
-    const facePath = join(__dirname, '..', '..', face.imagePath);
-    const faceStream = createReadStream(facePath);
-    res.set({
-      'Content-Type': 'image/jpeg',
-    });
-    faceStream.pipe(res);
-  }
-
-  @Get(':username/faces/:id/base64')
-  @Roles(Role.Admin, Role.Lecturer, Role.Student)
-  async findOneBase64(
-    @Param('username') username: string,
-    @Param('id') id: number,
-    @Request() req,
-  ) {
-    this.selfCheck(req, username);
-
-    const student = await this.studentsService.findOne(username);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
-      });
-    }
-
-    const face = await this.facesService.findOne(id);
-    if (!face) {
-      throw new NotFoundException({
-        message: FacesMessageError.FACE_NOT_FOUND,
-      });
-    }
-
-    const facePath = join(__dirname, '..', '..', face.imagePath);
-    const faceStream = readFileSync(facePath);
-    const base64 = faceStream.toString('base64');
-
-    return new ShowResponseDto(FacesMessageSuccess.FIND_ONE_SUCCESS, {
-      image: `data:image/jpeg;base64,${base64}`,
-    });
+    return new ShowResponseDto(FacesMessage.SUCCESS.FIND_ONE, face);
   }
 
   @Post(':username/faces')
@@ -167,7 +132,7 @@ export class FacesController {
   ) {
     this.selfCheck(req, username);
     await this.facesService.create(username, selfie);
-    return new BaseResponseDto(FacesMessageSuccess.CREATE_SUCCESS);
+    return new BaseResponseDto(FacesMessage.SUCCESS.CREATE);
   }
 
   @Delete(':username/faces/:id')
@@ -179,6 +144,6 @@ export class FacesController {
   ) {
     this.selfCheck(req, username);
     await this.facesService.delete(username, id);
-    return new BaseResponseDto(FacesMessageSuccess.DELETE_SUCCESS);
+    return new BaseResponseDto(FacesMessage.SUCCESS.DELETE);
   }
 }

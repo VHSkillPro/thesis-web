@@ -9,16 +9,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Face } from './faces.entity';
 import { Repository } from 'typeorm';
-import { createReadStream, unlink } from 'fs';
+import { createReadStream, readFileSync } from 'fs';
 import { join } from 'path';
 import { catchError, firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import * as FormData from 'form-data';
 import { StudentsService } from 'src/students/students.service';
-import { StudentsMessageError } from 'src/students/students.message';
+import StudentsMessage from 'src/students/students.message';
 import { AxiosError } from 'axios';
 import * as pgvector from 'pgvector';
-import { FacesMessageError } from './faces.message';
+import FacesMessage from './faces.message';
 import { removeFile } from 'src/utils/file';
 
 @Injectable()
@@ -37,10 +37,24 @@ export class FacesService {
    * @returns A promise that resolves to an array of face entities matching the specified username. If no entities are found, it returns an empty array.
    */
   async findAll(username: string) {
-    return await this.facesRepository
+    const faces = await this.facesRepository
       .createQueryBuilder('face')
       .where('face.student_id = :username', { username })
       .getMany();
+
+    return faces.map((face) => {
+      const imagePath = join(__dirname, '..', '..', face.imagePath);
+      const imageBuffer = readFileSync(imagePath);
+      const base64Image = imageBuffer.toString('base64');
+      const imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+      return {
+        id: face.id,
+        image: imageDataUrl,
+        embedding: face.embedding,
+        studentId: face.studentId,
+      };
+    });
   }
 
   /**
@@ -49,11 +63,26 @@ export class FacesService {
    * @param id - The unique identifier of the face entity to retrieve.
    * @returns A promise that resolves to the face entity if found, or `null` if not found.
    */
-  async findOne(id: number) {
-    // Using a simpler 'where' clause to filter by the face entity's ID
-    return await this.facesRepository.findOne({
-      where: { id },
+  async findOne(studentId: string, id: number) {
+    const face = await this.facesRepository.findOne({
+      where: { id, studentId },
     });
+
+    if (!face) {
+      return null;
+    }
+
+    const imagePath = join(__dirname, '..', '..', face.imagePath);
+    const imageBuffer = readFileSync(imagePath);
+    const base64Image = imageBuffer.toString('base64');
+    const imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+    return {
+      id: face.id,
+      image: imageDataUrl,
+      embedding: face.embedding,
+      studentId: face.studentId,
+    };
   }
 
   /**
@@ -156,20 +185,20 @@ export class FacesService {
    * @throws {Error} If any other error occurs during the process.
    */
   async create(username: string, selfie: Express.Multer.File) {
-    const student = await this.studentsService.findOne(username);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
-      });
-    }
-
-    if (!student.cardPath) {
-      throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_CARD_NOT_FOUND,
-      });
-    }
-
     try {
+      const student = await this.studentsService.findOne(username);
+      if (!student) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      if (!student.cardPath) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.CARD_NOT_FOUND,
+        });
+      }
+
       const threshold = 0.352;
       const isMatch = await this.checkCardAndSelfie(
         student.cardPath,
@@ -178,9 +207,9 @@ export class FacesService {
       );
 
       if (!isMatch) {
-        unlink(selfie.path, (err) => {});
+        removeFile(selfie.path);
         throw new BadRequestException({
-          message: StudentsMessageError.STUDENT_CARD_SELFIE_NOT_MATCH,
+          message: StudentsMessage.ERROR.CARD_SELFIE_NOT_MATCH,
         });
       }
 
@@ -193,8 +222,10 @@ export class FacesService {
 
       return await this.facesRepository.insert(face);
     } catch (error) {
-      unlink(selfie.path, (err) => {});
-      throw error;
+      removeFile(selfie.path);
+      throw new InternalServerErrorException({
+        message: FacesMessage.ERROR.CREATE,
+      });
     }
   }
 
@@ -207,24 +238,24 @@ export class FacesService {
    * @throws {InternalServerErrorException} If there is an error deleting the image file from the filesystem.
    */
   async delete(username: string, id: number) {
-    const student = await this.studentsService.findOne(username);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.STUDENT_NOT_FOUND,
-      });
-    }
-
-    const face = await this.facesRepository.findOne({
-      where: { id: id, studentId: username },
-    });
-
-    if (!face) {
-      throw new NotFoundException({
-        message: FacesMessageError.FACE_NOT_FOUND,
-      });
-    }
-
     try {
+      const student = await this.studentsService.findOne(username);
+      if (!student) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      const face = await this.facesRepository.findOne({
+        where: { id: id, studentId: username },
+      });
+
+      if (!face) {
+        throw new NotFoundException({
+          message: FacesMessage.ERROR.NOT_FOUND,
+        });
+      }
+
       const facePath = join(__dirname, '..', '..', face.imagePath);
       const result = await this.facesRepository.delete(id);
       if (
@@ -234,6 +265,10 @@ export class FacesService {
       ) {
         removeFile(facePath);
       }
-    } catch (error) {}
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: FacesMessage.ERROR.DELETE,
+      });
+    }
   }
 }

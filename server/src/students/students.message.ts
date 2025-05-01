@@ -33,5 +33,7 @@ export default class StudentsMessage {
     CREATE: 'Tạo sinh viên thất bại',
     UPDATE: 'Cập nhật sinh viên thất bại',
     DELETE: 'Xóa sinh viên thất bại',
+    CARD_NOT_FOUND: 'Không tìm thấy thẻ sinh viên',
+    CARD_SELFIE_NOT_MATCH: 'Thẻ sinh viên và ảnh chân dung không khớp',
   };
 }
