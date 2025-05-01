@@ -2,13 +2,14 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
-import { LecturersMessageError } from './lecturers.message';
+import LecturersMessage from './lecturers.message';
 import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 import { LecturersFilterDto } from './dto/lecturers-filter.dto';
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Lecturer } from './lecturers.entity';
@@ -51,6 +52,7 @@ export class LecturersService {
       query.andWhere('lecturer.isActive = :isActive', { isActive });
     }
 
+    query.orderBy('lecturer.username', 'DESC');
     return query;
   }
 
@@ -103,20 +105,28 @@ export class LecturersService {
    * @throws {BadRequestException} If a lecturer with the given username already exists.
    */
   async create(createLecturerDto: CreateLecturerDto) {
-    const lecturer = await this.usersSevice.findOne(createLecturerDto.username);
-    if (lecturer) {
-      throw new BadRequestException({
-        message: LecturersMessageError.ALREADY_EXISTS,
+    try {
+      const lecturer = await this.usersSevice.findOne(
+        createLecturerDto.username,
+      );
+      if (lecturer) {
+        throw new BadRequestException({
+          message: LecturersMessage.ERROR.ALREADY_EXISTS,
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(createLecturerDto.password, 10);
+      const newLecturer = this.lecturersRepositoty.create({
+        ...createLecturerDto,
+        password: hashedPassword,
+      });
+
+      return await this.lecturersRepositoty.insert(newLecturer);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: LecturersMessage.ERROR.CREATE,
       });
     }
-
-    const hashedPassword = await bcrypt.hash(createLecturerDto.password, 10);
-    const newLecturer = this.lecturersRepositoty.create({
-      ...createLecturerDto,
-      password: hashedPassword,
-    });
-
-    return await this.lecturersRepositoty.insert(newLecturer);
   }
 
   /**
@@ -132,23 +142,32 @@ export class LecturersService {
    * @throws {BadRequestException} If the lecturer with the given username is not found.
    */
   async update(username: string, updateLecturerDto: UpdateLecturerDto) {
-    const lecturer = await this.findOne(username);
-    if (!lecturer) {
-      throw new NotFoundException({
-        message: LecturersMessageError.NOT_FOUND,
+    try {
+      const lecturer = await this.findOne(username);
+      if (!lecturer) {
+        throw new NotFoundException({
+          message: LecturersMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      if (updateLecturerDto.fullname) {
+        lecturer.fullname = updateLecturerDto.fullname;
+      }
+
+      if (updateLecturerDto.password) {
+        const hashedPassword = await bcrypt.hash(
+          updateLecturerDto.password,
+          10,
+        );
+        lecturer.password = hashedPassword;
+      }
+
+      return await this.lecturersRepositoty.save(lecturer);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: LecturersMessage.ERROR.UPDATE,
       });
     }
-
-    if (updateLecturerDto.fullname) {
-      lecturer.fullname = updateLecturerDto.fullname;
-    }
-
-    if (updateLecturerDto.password) {
-      const hashedPassword = await bcrypt.hash(updateLecturerDto.password, 10);
-      lecturer.password = hashedPassword;
-    }
-
-    return await this.lecturersRepositoty.save(lecturer);
   }
 
   /**
@@ -160,18 +179,18 @@ export class LecturersService {
    * @throws {BadRequestException} If an error occurs during the deletion process.
    */
   async delete(username: string) {
-    const lecturer = await this.findOne(username);
-    if (!lecturer) {
-      throw new NotFoundException({
-        message: LecturersMessageError.NOT_FOUND,
-      });
-    }
-
     try {
+      const lecturer = await this.findOne(username);
+      if (!lecturer) {
+        throw new NotFoundException({
+          message: LecturersMessage.ERROR.NOT_FOUND,
+        });
+      }
+
       return await this.lecturersRepositoty.delete({ username });
     } catch (error) {
-      throw new BadRequestException({
-        message: LecturersMessageError.CANNOT_DELETE,
+      throw new InternalServerErrorException({
+        message: LecturersMessage.ERROR.DELETE,
       });
     }
   }
