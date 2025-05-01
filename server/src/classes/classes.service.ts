@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,19 +9,15 @@ import { Class } from './classes.entity';
 import { Repository } from 'typeorm';
 import { ClassesFilterDto } from './dto/classes-filter.dto';
 import { CreateClassDto } from './dto/create-class.dto';
-import { ClassesMessageError } from './classes.message';
+import ClassesMessage from './classes.message';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { LecturersService } from 'src/lecturers/lecturers.service';
-import { LecturersMessageError } from 'src/lecturers/lecturers.message';
-import { StudentsClasses } from 'src/students_classes/students_classes.entity';
-import { connectionSource } from 'src/config/typeorm';
+import LecturersMessage from 'src/lecturers/lecturers.message';
 
 @Injectable()
 export class ClassesService {
   constructor(
     @InjectRepository(Class) private classesRepository: Repository<Class>,
-    @InjectRepository(StudentsClasses)
-    private studentsClassesRepository: Repository<StudentsClasses>,
     private lecturersService: LecturersService,
   ) {}
 
@@ -56,6 +53,7 @@ export class ClassesService {
       });
     }
 
+    query.orderBy('classes.lecturerId', 'ASC');
     return query;
   }
 
@@ -107,8 +105,14 @@ export class ClassesService {
    * @returns A promise that resolves to the result of the insertion operation.
    */
   async create(classData: CreateClassDto) {
-    const newClass = this.classesRepository.create(classData);
-    return await this.classesRepository.insert(newClass);
+    try {
+      const newClass = this.classesRepository.create(classData);
+      return await this.classesRepository.insert(newClass);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: ClassesMessage.ERROR.CREATE,
+      });
+    }
   }
 
   /**
@@ -125,33 +129,39 @@ export class ClassesService {
    * @returns A promise that resolves to the updated class entity.
    */
   async update(id: string, classData: UpdateClassDto) {
-    const classToUpdate = await this.findOne(id);
-    if (!classToUpdate) {
-      throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
-      });
-    }
-
-    // Update name if provided
-    if (classData?.name) {
-      classToUpdate.name = classData.name;
-    }
-
-    // Update lecturerId if provided
-    if (classData?.lecturerId) {
-      const lecturer = await this.lecturersService.findOne(
-        classData.lecturerId,
-      );
-      if (!lecturer) {
-        throw new BadRequestException({
-          message: LecturersMessageError.LECTURER_NOT_FOUND,
+    try {
+      const classToUpdate = await this.findOne(id);
+      if (!classToUpdate) {
+        throw new NotFoundException({
+          message: ClassesMessage.ERROR.NOT_FOUND,
         });
       }
 
-      classToUpdate.lecturerId = classData.lecturerId;
-    }
+      // Update name if provided
+      if (classData?.name) {
+        classToUpdate.name = classData.name;
+      }
 
-    return await this.classesRepository.update(id, classToUpdate);
+      // Update lecturerId if provided
+      if (classData?.lecturerId) {
+        const lecturer = await this.lecturersService.findOne(
+          classData.lecturerId,
+        );
+        if (!lecturer) {
+          throw new BadRequestException({
+            message: LecturersMessage.ERROR.NOT_FOUND,
+          });
+        }
+
+        classToUpdate.lecturerId = classData.lecturerId;
+      }
+
+      return await this.classesRepository.update(id, classToUpdate);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: ClassesMessage.ERROR.UPDATE,
+      });
+    }
   }
 
   /**
@@ -167,26 +177,19 @@ export class ClassesService {
    * @throws BadRequestException if the class with the given ID is not found.
    */
   async delete(id: string) {
-    const classToDelete = await this.findOne(id);
-    if (!classToDelete) {
-      throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+    try {
+      const classToDelete = await this.findOne(id);
+      if (!classToDelete) {
+        throw new NotFoundException({
+          message: ClassesMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      return await this.classesRepository.delete(id);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: ClassesMessage.ERROR.DELETE,
       });
     }
-
-    if (!connectionSource.isInitialized) {
-      await connectionSource.initialize();
-    }
-
-    return await connectionSource.transaction(async (manager) => {
-      // Delete all students enrolled in the class
-      await manager.delete(StudentsClasses, {
-        classId: id,
-      });
-
-      await manager.delete(Class, {
-        id,
-      });
-    });
   }
 }

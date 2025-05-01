@@ -23,10 +23,10 @@ import {
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import { ClassesMessageError, ClassesMessageSuccess } from './classes.message';
+import ClassesMessage from './classes.message';
 import { CreateClassDto } from './dto/create-class.dto';
 import { LecturersService } from 'src/lecturers/lecturers.service';
-import { LecturersMessageError } from 'src/lecturers/lecturers.message';
+import LecturersMessage from 'src/lecturers/lecturers.message';
 import { UpdateClassDto } from './dto/update-class.dto';
 
 @Controller('classes')
@@ -44,7 +44,7 @@ export class ClassesController {
     const count = await this.classesService.count(classesFilter);
 
     return new PaginationResponseDto(
-      ClassesMessageSuccess.FIND_ALL,
+      ClassesMessage.SUCCESS.FIND_ALL,
       classes,
       new PaginationMetaDto(count, classesFilter.page, classesFilter.limit),
     );
@@ -56,11 +56,11 @@ export class ClassesController {
     const classData = await this.classesService.findOne(id);
     if (!classData) {
       throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+        message: ClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
-    return new ShowResponseDto(ClassesMessageSuccess.FIND_ONE, classData);
+    return new ShowResponseDto(ClassesMessage.SUCCESS.FIND_ONE, classData);
   }
 
   @Post()
@@ -70,7 +70,7 @@ export class ClassesController {
 
     if (existingClass) {
       throw new BadRequestException({
-        message: ClassesMessageError.ALREADY_EXISTS,
+        message: ClassesMessage.ERROR.ALREADY_EXISTS,
       });
     }
 
@@ -79,12 +79,12 @@ export class ClassesController {
     );
     if (!lecturer) {
       throw new NotFoundException({
-        message: LecturersMessageError.LECTURER_NOT_FOUND,
+        message: LecturersMessage.ERROR.NOT_FOUND,
       });
     }
 
     const newClass = await this.classesService.create(createClassDto);
-    return new BaseResponseDto(ClassesMessageSuccess.CREATE);
+    return new BaseResponseDto(ClassesMessage.SUCCESS.CREATE);
   }
 
   @Patch(':id')
@@ -94,13 +94,13 @@ export class ClassesController {
     @Body() updateClassDto: UpdateClassDto,
   ) {
     await this.classesService.update(id, updateClassDto);
-    return new BaseResponseDto(ClassesMessageSuccess.UPDATE);
+    return new BaseResponseDto(ClassesMessage.SUCCESS.UPDATE);
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async delete(@Param('id') id: string) {
     await this.classesService.delete(id);
-    return new BaseResponseDto(ClassesMessageSuccess.DELETE);
+    return new BaseResponseDto(ClassesMessage.SUCCESS.DELETE);
   }
 }
