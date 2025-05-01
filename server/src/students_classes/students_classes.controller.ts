@@ -22,11 +22,8 @@ import {
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import {
-  StudentsClassesMessageError,
-  StudentsClassesMessageSuccess,
-} from './students_classes.message';
-import { AuthMessageError } from 'src/auth/auth.message';
+import StudentsClassesMessage from './students_classes.message';
+import AuthMessage from 'src/auth/auth.message';
 
 @Controller('classes/:id/students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -37,7 +34,7 @@ export class StudentsClassesController {
     const user = req.user;
     if (user.roleId === Role.Student && user.username !== studentId) {
       throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
+        message: AuthMessage.ERROR.FORBIDDEN,
       });
     }
   }
@@ -58,7 +55,7 @@ export class StudentsClassesController {
     );
 
     return new PaginationResponseDto(
-      StudentsClassesMessageSuccess.FIND_ALL,
+      StudentsClassesMessage.SUCCESS.FIND_ALL,
       students,
       new PaginationMetaDto(
         total,
@@ -83,11 +80,14 @@ export class StudentsClassesController {
     );
     if (!student) {
       throw new NotFoundException({
-        message: StudentsClassesMessageError.NOT_FOUND,
+        message: StudentsClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
-    return new ShowResponseDto(StudentsClassesMessageSuccess.FIND_ONE, student);
+    return new ShowResponseDto(
+      StudentsClassesMessage.SUCCESS.FIND_ONE,
+      student,
+    );
   }
 
   @Post(':studentId')
@@ -97,7 +97,7 @@ export class StudentsClassesController {
     @Param('studentId') studentId: string,
   ) {
     await this.studentsClassesService.create(classId, studentId);
-    return new BaseResponseDto(StudentsClassesMessageSuccess.CREATE);
+    return new BaseResponseDto(StudentsClassesMessage.SUCCESS.CREATE);
   }
 
   @Delete(':studentId')
@@ -112,9 +112,9 @@ export class StudentsClassesController {
     );
     if (!student) {
       throw new NotFoundException({
-        message: StudentsClassesMessageError.NOT_FOUND,
+        message: StudentsClassesMessage.ERROR.NOT_FOUND,
       });
     }
-    return new BaseResponseDto(StudentsClassesMessageSuccess.DELETE);
+    return new BaseResponseDto(StudentsClassesMessage.SUCCESS.DELETE);
   }
 }
