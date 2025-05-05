@@ -1,5 +1,5 @@
 "use client";
-import { StudentFilter } from "@/app/(dashboard)/students/action";
+import { StudentFilterDto } from "@/app/(dashboard)/students/action";
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Select } from "antd";
 
@@ -14,8 +14,8 @@ interface StudentFilterForm {
 }
 
 interface StudentFilterProps {
-  filter: StudentFilter;
-  setFilter: (filter: StudentFilter) => void;
+  filter: StudentFilterDto;
+  setFilter: (filter: StudentFilterDto) => void;
 }
 
 export default function StudentFilterComponent(props: StudentFilterProps) {
@@ -35,7 +35,7 @@ export default function StudentFilterComponent(props: StudentFilterProps) {
           isActive: values.isActive === "all" ? undefined : values.isActive,
           page: 1,
           limit: props.filter.limit,
-        } as StudentFilter;
+        } as StudentFilterDto;
 
         props.setFilter(newFilter);
       }}

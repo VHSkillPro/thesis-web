@@ -1,43 +1,7 @@
 "use server";
 import { BASE_URL } from "@/config";
+import { getAccessToken } from "@/utils/tokens";
 import { cookies } from "next/headers";
-
-export async function getStudentDetailAction(studentId: string) {
-  const cookiesStorage = await cookies();
-  const accessToken = cookiesStorage.get("accessToken")?.value || " ";
-
-  try {
-    const response = await fetch(`${BASE_URL}/students/${studentId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    const json = await response.json();
-    if (response.ok) {
-      return {
-        success: true,
-        message: json.message,
-        statusCode: response.status,
-        data: json.data,
-      };
-    } else {
-      return {
-        success: false,
-        message: json.message,
-        statusCode: response.status,
-      };
-    }
-  } catch (error) {
-    return {
-      sucess: false,
-      message: "Lỗi máy chủ",
-      statusCode: 500,
-    };
-  }
-}
 
 export interface UpdateStudentDto {
   fullname?: string;
@@ -46,6 +10,36 @@ export interface UpdateStudentDto {
   className?: string;
   course?: string;
   card?: any;
+}
+
+export async function getStudentDetailAction(studentId: string) {
+  try {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(`${BASE_URL}/students/${studentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      next: {
+        tags: ["student"],
+      },
+    });
+
+    const json = await response.json();
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...json,
+    };
+  } catch (error) {
+    return {
+      sucess: false,
+      message: "Lỗi máy chủ",
+      statusCode: 500,
+    };
+  }
 }
 
 export async function updateStudentAction(
@@ -91,19 +85,11 @@ export async function updateStudentAction(
     });
 
     const json = await response.json();
-    if (response.ok) {
-      return {
-        success: true,
-        message: json.message,
-        statusCode: response.status,
-      };
-    } else {
-      return {
-        success: false,
-        message: json.message,
-        statusCode: response.status,
-      };
-    }
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...json,
+    };
   } catch (error) {
     return {
       success: false,
