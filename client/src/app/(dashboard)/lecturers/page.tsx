@@ -10,7 +10,12 @@ import {
   TableProps,
   Typography,
 } from "antd";
-import getLecturersAction, { FilterLecturerDto, LecturerDto } from "./action";
+import {
+  FilterLecturerDto,
+  LecturerDto,
+  deleteLecturerAction,
+  getLecturersAction,
+} from "./action";
 import { useNotification } from "@/context/NotificationContext";
 import { MetaDto } from "@/types/meta";
 import {
@@ -84,6 +89,27 @@ export default function LecturersPage() {
     getLecturers(lecturersFilter);
   }, [lecturersFilter]);
 
+  const onDeleteLecturer = async (username: string) => {
+    const response = await deleteLecturerAction(username);
+    if (response.success) {
+      notifySuccess(response.message);
+      const newFilter = {
+        ...lecturersFilter,
+      };
+
+      if (meta) {
+        const maxPages = Math.ceil((meta.total - 1) / meta.limit);
+        if (newFilter.page && newFilter.page > maxPages) {
+          newFilter.page = maxPages;
+        }
+      }
+
+      setLecturersFilter(newFilter);
+    } else {
+      notifyError(response.message);
+    }
+  };
+
   const columns: TableProps<DataType>["columns"] = [
     {
       title: "Mã giảng viên",
@@ -129,8 +155,8 @@ export default function LecturersPage() {
             title="Bạn có chắc chắn muốn xóa giảng viên này không?"
             okText="Có"
             cancelText="Không"
-            placement="topLeft"
-            // onConfirm={() => onDeleteStudent(record.username)}
+            placement="topRight"
+            onConfirm={() => onDeleteLecturer(record.username)}
             description={
               <Typography.Text>
                 Bạn không thể xóa giảng viên này <br /> nếu như có dữ liệu khác

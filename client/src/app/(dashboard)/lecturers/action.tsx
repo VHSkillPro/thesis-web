@@ -1,6 +1,7 @@
 "use server";
 import { BASE_URL } from "@/config";
 import { getAccessToken } from "@/utils/tokens";
+import { revalidateTag } from "next/cache";
 
 export interface LecturerDto {
   username: string;
@@ -54,7 +55,7 @@ function createQueryString(filter: FilterLecturerDto) {
   return queryString.toString();
 }
 
-export default async function getLecturersAction(filter: FilterLecturerDto) {
+export async function getLecturersAction(filter: FilterLecturerDto) {
   try {
     const response = await fetch(
       `${BASE_URL}/lecturers?${createQueryString(filter)}`,
@@ -75,6 +76,38 @@ export default async function getLecturersAction(filter: FilterLecturerDto) {
       success: response.ok,
       statusCode: response.status,
       ...json,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      statusCode: 500,
+      message: "Lỗi máy chủ",
+    };
+  }
+}
+
+export async function deleteLecturerAction(username: string) {
+  try {
+    const accessToken = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/lecturers/${username}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      next: {
+        tags: ["lecturers"],
+      },
+    });
+
+    const body = await response.json();
+    if (response.ok) {
+      revalidateTag("lecturers");
+    }
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...body,
     };
   } catch (error) {
     return {
