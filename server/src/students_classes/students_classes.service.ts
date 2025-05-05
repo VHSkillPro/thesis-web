@@ -1,14 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StudentsClasses } from './students_classes.entity';
 import { Repository } from 'typeorm';
 import { ClassesService } from 'src/classes/classes.service';
 import { StudentsService } from 'src/students/students.service';
-import { ClassesMessageError } from 'src/classes/classes.message';
+import ClassesMessage from 'src/classes/classes.message';
 import { StudentsFilterDto } from '../students/dto/students-filter.dto';
-import { StudentsMessageError } from 'src/students/students.message';
-import { StudentsClassesMessageError } from './students_classes.message';
+import StudentsMessage from 'src/students/students.message';
 import { Student } from 'src/students/students.entity';
+import { join } from 'path';
+import { readFileSync } from 'fs';
+import StudentsClassesMessage from './students_classes.message';
 
 @Injectable()
 export class StudentsClassesService {
@@ -72,6 +78,7 @@ export class StudentsClassesService {
       });
     }
 
+    query.orderBy('student.username', 'ASC');
     return query;
   }
 
@@ -87,7 +94,7 @@ export class StudentsClassesService {
     const classEntity = await this.classesService.findOne(classId);
     if (!classEntity) {
       throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+        message: ClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
@@ -111,7 +118,7 @@ export class StudentsClassesService {
     const classEntity = await this.classesService.findOne(classId);
     if (!classEntity) {
       throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+        message: ClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
@@ -120,7 +127,22 @@ export class StudentsClassesService {
     query.limit(limit);
     query.offset((page - 1) * limit);
 
-    return await query.getMany();
+    const students = await query.getMany();
+    return students.map((student) => {
+      const cardPath = join(__dirname, '..', '..', student.cardPath);
+      const card = readFileSync(cardPath);
+      const base64Card = Buffer.from(card).toString('base64');
+
+      return {
+        id: student.id,
+        username: student.username,
+        fullname: student.fullname,
+        course: student.course,
+        className: student.className,
+        isActive: student.isActive,
+        card: base64Card,
+      };
+    });
   }
 
   /**
@@ -136,7 +158,7 @@ export class StudentsClassesService {
     const classEntity = await this.classesService.findOne(classId);
     if (!classEntity) {
       throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+        message: ClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
@@ -152,11 +174,23 @@ export class StudentsClassesService {
     const studentsClasses = await query.getOne();
     if (!studentsClasses) {
       throw new NotFoundException({
-        message: StudentsClassesMessageError.NOT_FOUND,
+        message: StudentsClassesMessage.ERROR.NOT_FOUND,
       });
     }
 
-    return studentsClasses;
+    const cardPath = join(__dirname, '..', '..', studentsClasses.cardPath);
+    const card = readFileSync(cardPath);
+    const base64Card = Buffer.from(card).toString('base64');
+
+    return {
+      id: studentsClasses.id,
+      username: studentsClasses.username,
+      fullname: studentsClasses.fullname,
+      course: studentsClasses.course,
+      className: studentsClasses.className,
+      isActive: studentsClasses.isActive,
+      card: base64Card,
+    };
   }
 
   /**
@@ -170,37 +204,43 @@ export class StudentsClassesService {
    * @throws {NotFoundException} If the association between the student and class already exists.
    */
   async create(classId: string, studentId: string) {
-    const classEntity = await this.classesService.findOne(classId);
-    if (!classEntity) {
-      throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
-      });
-    }
+    try {
+      const classEntity = await this.classesService.findOne(classId);
+      if (!classEntity) {
+        throw new NotFoundException({
+          message: ClassesMessage.ERROR.NOT_FOUND,
+        });
+      }
 
-    const studentEntity = await this.studentsService.findOne(studentId);
-    if (!studentEntity) {
-      throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
-      });
-    }
+      const studentEntity = await this.studentsService.findOne(studentId);
+      if (!studentEntity) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.NOT_FOUND,
+        });
+      }
 
-    const studentClass = await this.studentsClassesRepository.findOne({
-      where: {
+      const studentClass = await this.studentsClassesRepository.findOne({
+        where: {
+          classId,
+          studentId,
+        },
+      });
+      if (studentClass) {
+        throw new NotFoundException({
+          message: StudentsClassesMessage.ERROR.ALREADY_EXISTS,
+        });
+      }
+
+      const newStudentClass = this.studentsClassesRepository.create({
         classId,
         studentId,
-      },
-    });
-    if (studentClass) {
-      throw new NotFoundException({
-        message: StudentsClassesMessageError.ALREADY_EXISTS,
+      });
+      return await this.studentsClassesRepository.insert(newStudentClass);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: StudentsClassesMessage.ERROR.CREATE,
       });
     }
-
-    const newStudentClass = this.studentsClassesRepository.create({
-      classId,
-      studentId,
-    });
-    return await this.studentsClassesRepository.insert(newStudentClass);
   }
 
   /**
@@ -213,25 +253,31 @@ export class StudentsClassesService {
    * @returns A promise that resolves when the association is successfully deleted.
    */
   async delete(classId: string, studentId: string) {
-    const classEntity = await this.classesService.findOne(classId);
-    if (!classEntity) {
-      throw new NotFoundException({
-        message: ClassesMessageError.NOT_FOUND,
+    try {
+      const classEntity = await this.classesService.findOne(classId);
+      if (!classEntity) {
+        throw new NotFoundException({
+          message: ClassesMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      const studentClass = await this.studentsClassesRepository.findOne({
+        where: {
+          classId,
+          studentId,
+        },
+      });
+      if (!studentClass) {
+        throw new NotFoundException({
+          message: StudentsClassesMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      return await this.studentsClassesRepository.delete(studentClass);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: StudentsClassesMessage.ERROR.DELETE,
       });
     }
-
-    const studentClass = await this.studentsClassesRepository.findOne({
-      where: {
-        classId,
-        studentId,
-      },
-    });
-    if (!studentClass) {
-      throw new NotFoundException({
-        message: StudentsClassesMessageError.NOT_FOUND,
-      });
-    }
-
-    return await this.studentsClassesRepository.delete(studentClass);
   }
 }

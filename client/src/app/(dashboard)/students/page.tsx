@@ -13,8 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import getStudentsAction, {
   deleteStudentAction,
-  getCardOfStudentAction,
-  StudentFilter,
+  StudentFilterDto,
 } from "./action";
 import { useNotification } from "@/context/NotificationContext";
 import {
@@ -43,55 +42,30 @@ export default function Page() {
   const { notifySuccess, notifyError } = useNotification();
 
   const [isFetching, setIsFetching] = useState(false);
-  const [meta, setMeta] = useState<Meta | undefined>(undefined);
   const [students, setStudents] = useState<DataType[]>([]);
-  const [studentsFilter, setStudentsFilter] = useState({
+  const [meta, setMeta] = useState<Meta>({
     page: 1,
     limit: PAGE_SIZE,
-  } as StudentFilter);
+    total: 0,
+    pages: 0,
+  });
+  const [studentsFilter, setStudentsFilter] = useState<StudentFilterDto>({
+    page: 1,
+    limit: PAGE_SIZE,
+  });
 
-  /**
-   * Fetches a list of students based on the provided filter, retrieves additional card information
-   * for each student, and updates the state with the processed data.
-   *
-   * @param {StudentFilter} studentsFilter - The filter criteria to fetch the students.
-   *
-   * @returns {Promise<void>} A promise that resolves when the fetching and processing are complete.
-   *
-   * @remarks
-   * - Sets the `isFetching` state to `true` at the start and `false` at the end of the operation.
-   * - Calls `getStudentsAction` to fetch the list of students and their metadata.
-   * - Maps the student data to include a unique `key` property.
-   * - Fetches card information for each student using `getCardOfStudentAction`.
-   * - Updates the student data with the card image if the fetch is successful.
-   * - Displays an error notification if fetching the card or the student list fails.
-   * - Updates the `students` state with the processed data and `meta` state with metadata.
-   */
-  const getStudents = async (studentsFilter: StudentFilter) => {
+  const getStudents = async (studentsFilter: StudentFilterDto) => {
     setIsFetching(true);
 
     const response = await getStudentsAction(studentsFilter);
     if (response.success) {
-      setMeta(response.meta);
-
       const data = response.data.map((student: any) => ({
         key: student.username,
         ...student,
       }));
 
-      const listGetCardOfStudent = await Promise.all(
-        data.map((student: any) => getCardOfStudentAction(student.username))
-      );
-
-      for (let i = 0; i < data.length; ++i) {
-        if (listGetCardOfStudent[i].success) {
-          data[i].card = listGetCardOfStudent[i].data.image;
-        } else {
-          notifyError(listGetCardOfStudent[i].message);
-        }
-      }
-
       setStudents(data);
+      setMeta(response.meta);
     } else {
       notifyError(response.message);
     }
@@ -99,21 +73,6 @@ export default function Page() {
     setIsFetching(false);
   };
 
-  /**
-   * Handles the deletion of a student by their ID.
-   *
-   * This function performs the following steps:
-   * 1. Calls the `deleteStudentAction` to delete the student.
-   * 2. If the deletion is successful:
-   *    - Displays a success notification with the response message.
-   *    - Updates the `studentsFilter` state to ensure the current page is valid
-   *      based on the updated total number of students.
-   * 3. If the deletion fails:
-   *    - Displays an error notification with the response message.
-   *
-   * @param {string} studentId - The unique identifier of the student to be deleted.
-   * @returns {Promise<void>} A promise that resolves when the operation is complete.
-   */
   const onDeleteStudent = async (studentId: string) => {
     const response = await deleteStudentAction(studentId);
 

@@ -28,7 +28,7 @@ import {
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import {
+import StudentsMessage, {
   StudentsMessageError,
   StudentsMessageSuccess,
 } from './students.message';
@@ -41,7 +41,7 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { Response } from 'express';
 import { createReadStream, readFileSync } from 'fs';
 import { join } from 'path';
-import { AuthMessageError } from 'src/auth/auth.message';
+import AuthMessage from 'src/auth/auth.message';
 
 @Controller('students')
 @UseGuards(AuthGuard, RolesGuard)
@@ -52,7 +52,7 @@ export class StudentsController {
     const user = req.user;
     if (user.roleId === Role.Student && user.username !== studentId) {
       throw new ForbiddenException({
-        message: AuthMessageError.FORBIDDEN,
+        message: AuthMessage.ERROR.FORBIDDEN,
       });
     }
   }
@@ -63,9 +63,24 @@ export class StudentsController {
     const students = await this.studentsService.findAll(studentsFilterDto);
     const count = await this.studentsService.count(studentsFilterDto);
 
+    const convertedStudents = students.map((student) => {
+      const cardPath = join(__dirname, '..', '..', student.cardPath);
+      const cardBuffer = readFileSync(cardPath);
+      const base64 = cardBuffer.toString('base64');
+
+      return {
+        username: student.username,
+        fullname: student.fullname,
+        isActive: student.isActive,
+        course: student.course,
+        className: student.className,
+        card: `data:image/jpeg;base64,${base64}`,
+      };
+    });
+
     return new PaginationResponseDto(
-      StudentsMessageSuccess.FIND_ALL,
-      students,
+      StudentsMessage.SUCCESS.FIND_ALL,
+      convertedStudents,
       new PaginationMetaDto(
         count,
         studentsFilterDto.page,
@@ -82,70 +97,27 @@ export class StudentsController {
     const student = await this.studentsService.findOne(studentId);
     if (!student) {
       throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
+        message: StudentsMessage.ERROR.NOT_FOUND,
       });
     }
 
-    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE, student);
-  }
-
-  @Get(':id/card/')
-  @Roles(Role.Admin, Role.Lecturer, Role.Student)
-  async getCard(
-    @Param('id') studentId: string,
-    @Res() res: Response,
-    @Request() req,
-  ) {
-    this.selfCheck(req, studentId);
-
-    const student = await this.studentsService.findOne(studentId);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
-      });
-    }
-
-    const card = student.cardPath;
-    if (!card) {
-      throw new NotFoundException({
-        message: StudentsMessageError.CARD_NOT_FOUND,
-      });
-    }
-
-    const cardPath = join(__dirname, '..', '..', card);
-    const cardStream = createReadStream(cardPath);
-    res.set({
-      'Content-Type': 'image/jpeg',
-    });
-    cardStream.pipe(res);
-  }
-
-  @Get(':id/card/base64')
-  @Roles(Role.Admin, Role.Lecturer, Role.Student)
-  async getCardBase64(@Param('id') studentId: string, @Request() req) {
-    this.selfCheck(req, studentId);
-
-    const student = await this.studentsService.findOne(studentId);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
-      });
-    }
-
-    const card = student.cardPath;
-    if (!card) {
-      throw new NotFoundException({
-        message: StudentsMessageError.CARD_NOT_FOUND,
-      });
-    }
-
-    const cardPath = join(__dirname, '..', '..', card);
+    const cardPath = join(__dirname, '..', '..', student.cardPath);
     const cardBuffer = readFileSync(cardPath);
     const base64 = cardBuffer.toString('base64');
 
-    return new ShowResponseDto(StudentsMessageSuccess.FIND_ONE_CARD, {
-      image: `data:image/jpeg;base64,${base64}`,
-    });
+    const convertedStudent = {
+      username: student.username,
+      fullname: student.fullname,
+      isActive: student.isActive,
+      course: student.course,
+      className: student.className,
+      card: `data:image/jpeg;base64,${base64}`,
+    };
+
+    return new ShowResponseDto(
+      StudentsMessage.SUCCESS.FIND_ONE,
+      convertedStudent,
+    );
   }
 
   @Post()

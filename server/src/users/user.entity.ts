@@ -14,6 +14,7 @@ export abstract class AbstractUser {
   @Column({ type: 'character varying', length: 255 })
   fullname: string;
 
+  @Exclude()
   @Column({ type: 'boolean', name: 'is_superuser', default: false })
   isSuperuser: boolean;
 

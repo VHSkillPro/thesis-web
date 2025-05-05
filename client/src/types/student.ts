@@ -1,9 +1,8 @@
-export interface Student {
-    id: string;
+export interface StudentDto {
+    username: string;
     fullname: string;
     isActive: boolean;
-    isSuperuser: boolean;
     className: string;
     course: string;
-    cardPath: string;
+    card: string;
 }

@@ -4,19 +4,18 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { StudentsFilterDto } from './dto/students-filter.dto';
-import { CreateStudentDto } from './dto/create-student.dto';
-import { StudentsMessageError } from './students.message';
-import * as bcrypt from 'bcrypt';
-import { unlink } from 'fs';
-import { UpdateStudentDto } from './dto/update-student.dto';
 import { join } from 'path';
+import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UpdateStudentDto } from './dto/update-student.dto';
+import { CreateStudentDto } from './dto/create-student.dto';
+import { StudentsFilterDto } from './dto/students-filter.dto';
 import { Student } from './students.entity';
-import { connectionSource } from 'src/config/typeorm';
-import { Face } from '../faces/faces.entity';
 import { removeFile } from 'src/utils/file';
+import { Face } from '../faces/faces.entity';
+import StudentsMessage from './students.message';
+import { connectionSource } from 'src/config/typeorm';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -124,28 +123,28 @@ export class StudentsService {
    * @throws {BadRequestException} If a student with the given username already exists.
    */
   async create(createStudentDto: CreateStudentDto, card: Express.Multer.File) {
-    const user = await this.usersService.findOne(createStudentDto.username);
-    if (user) {
-      removeFile(card.path);
-      throw new BadRequestException({
-        message: StudentsMessageError.ALREADY_EXISTS,
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
-    const newStudent = this.studentsRepository.create({
-      ...createStudentDto,
-      password: hashedPassword,
-      cardPath: card.path,
-    });
-
     try {
+      const user = await this.usersService.findOne(createStudentDto.username);
+      if (user) {
+        removeFile(card.path);
+        throw new BadRequestException({
+          message: StudentsMessage.ERROR.ALREADY_EXISTS,
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
+      const newStudent = this.studentsRepository.create({
+        ...createStudentDto,
+        password: hashedPassword,
+        cardPath: card.path,
+      });
+
       return await this.studentsRepository.insert(newStudent);
     } catch (error) {
       console.log(error);
       removeFile(card.path);
       throw new InternalServerErrorException({
-        message: 'Lỗi khi tạo sinh viên',
+        message: StudentsMessage.ERROR.CREATE,
       });
     }
   }
@@ -166,31 +165,41 @@ export class StudentsService {
     updateStudentDto?: UpdateStudentDto,
     card?: Express.Multer.File,
   ) {
-    const student = await this.findOne(username);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
+    try {
+      const student = await this.findOne(username);
+      if (!student) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      const newStudent = await this.studentsRepository.create({
+        ...student,
+        ...updateStudentDto,
+      });
+
+      if (updateStudentDto?.password) {
+        const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
+        newStudent.password = hashedPassword;
+      }
+
+      if (card) {
+        if (newStudent.cardPath) {
+          removeFile(newStudent.cardPath);
+        }
+        newStudent.cardPath = card.path;
+      }
+
+      return await this.studentsRepository.save(newStudent);
+    } catch (error) {
+      console.log(error);
+      if (card) {
+        removeFile(card.path);
+      }
+      throw new InternalServerErrorException({
+        message: StudentsMessage.ERROR.UPDATE,
       });
     }
-
-    const newStudent = await this.studentsRepository.create({
-      ...student,
-      ...updateStudentDto,
-    });
-
-    if (updateStudentDto?.password) {
-      const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
-      newStudent.password = hashedPassword;
-    }
-
-    if (card) {
-      if (newStudent.cardPath) {
-        removeFile(newStudent.cardPath);
-      }
-      newStudent.cardPath = card.path;
-    }
-
-    return await this.studentsRepository.save(newStudent);
   }
 
   /**
@@ -207,39 +216,44 @@ export class StudentsService {
    * Note: The deletion of the associated student of a class is currently not implemented (TODO).
    */
   async delete(username: string) {
-    const student = await this.findOne(username);
-    if (!student) {
-      throw new NotFoundException({
-        message: StudentsMessageError.NOT_FOUND,
-      });
-    }
-
-    if (!connectionSource.isInitialized) {
-      await connectionSource.initialize();
-    }
-
-    return await connectionSource.transaction(async (manager) => {
-      const cardPath =
-        student.cardPath !== undefined
-          ? join(__dirname, '..', '..', student.cardPath)
-          : undefined;
-
-      // Delete the student
-      await manager.delete(Student, {
-        username: username,
-      });
-
-      // Delete the associated faces
-      await manager.delete(Face, {
-        studentId: student.id,
-      });
-
-      // TODO: Delete the associated student of class
-
-      // Delete the card file if it exists
-      if (cardPath) {
-        removeFile(cardPath);
+    try {
+      const student = await this.findOne(username);
+      if (!student) {
+        throw new NotFoundException({
+          message: StudentsMessage.ERROR.NOT_FOUND,
+        });
       }
-    });
+
+      if (!connectionSource.isInitialized) {
+        await connectionSource.initialize();
+      }
+
+      return await connectionSource.transaction(async (manager) => {
+        const cardPath =
+          student.cardPath !== undefined
+            ? join(__dirname, '..', '..', student.cardPath)
+            : undefined;
+
+        // Delete the student
+        await manager.delete(Student, {
+          username: username,
+        });
+
+        // Delete the associated faces
+        await manager.delete(Face, {
+          studentId: student.id,
+        });
+
+        // Delete the card file if it exists
+        if (cardPath) {
+          removeFile(cardPath);
+        }
+      });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException({
+        message: StudentsMessage.ERROR.DELETE,
+      });
+    }
   }
 }

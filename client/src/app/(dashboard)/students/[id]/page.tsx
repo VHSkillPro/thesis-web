@@ -21,7 +21,6 @@ import {
 } from "./action";
 import { useParams, useRouter } from "next/navigation";
 import { useNotification } from "@/context/NotificationContext";
-import { getCardOfStudentAction } from "../action";
 import { RcFile } from "antd/es/upload";
 import { EditOutlined, RollbackOutlined } from "@ant-design/icons";
 
@@ -51,13 +50,6 @@ export default function StudentDetailPage() {
 
     const response = await getStudentDetailAction(studentId);
     if (response.success) {
-      const cardResponse = await getCardOfStudentAction(studentId);
-      if (cardResponse.success) {
-        setCardUri(cardResponse.data.image);
-      } else {
-        notifyError(cardResponse.message);
-      }
-
       const student = response.data;
       form.setFieldsValue({
         username: student.username,
@@ -66,6 +58,7 @@ export default function StudentDetailPage() {
         className: student.className,
         course: student.course,
       });
+      setCardUri(student.card);
     } else {
       notifyError(response.message);
       router.push("/students");
@@ -92,25 +85,6 @@ export default function StudentDetailPage() {
     return false;
   };
 
-  /**
-   * Handles the upload of a student's card.
-   *
-   * @param {RcFile[]} files - An array of files to be uploaded. Only the first file in the array is used.
-   *
-   * @returns {Promise<void>} This function performs asynchronous operations and does not return a value.
-   *
-   * The function performs the following steps:
-   * 1. Sets the loading state for the card upload process.
-   * 2. Checks if the `files` array is empty. If it is, the function exits early.
-   * 3. Calls the `updateStudentAction` function to upload the card file for the student with the given `id`.
-   * 4. If the upload is successful:
-   *    - Displays a success notification.
-   *    - Fetches the updated card information using `getCardOfStudentAction`.
-   *    - Updates the card URI state with the new card image if the fetch is successful.
-   *    - Displays an error notification if fetching the card information fails.
-   * 5. If the upload fails, displays an error notification with the response message.
-   * 6. Resets the loading state for the card upload process.
-   */
   const onUploadCard = async (files: RcFile[]) => {
     setIsLoadingCard(true);
 
@@ -124,12 +98,7 @@ export default function StudentDetailPage() {
 
     if (response.success) {
       notifySuccess("Cập nhật thẻ sinh viên thành công");
-      const cardResponse = await getCardOfStudentAction(id);
-      if (cardResponse.success) {
-        setCardUri(cardResponse.data.image);
-      } else {
-        notifyError(cardResponse.message);
-      }
+      getStudentDetail(id);
     } else {
       notifyError(response.message);
     }

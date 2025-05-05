@@ -1,7 +1,6 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { User } from './user.entity';
 import { UsersFilterDto } from './dto/user-filter.dto';
 
@@ -52,6 +51,7 @@ export class UsersService {
       query.andWhere('user.roleId = :roleId', { roleId: roleId });
     }
 
+    query.orderBy('user.username', 'ASC');
     return query;
   }
 
@@ -80,11 +80,8 @@ export class UsersService {
    */
   async findAll(usersFilter: UsersFilterDto) {
     const query = this.findAllQueryBuilder(usersFilter);
-
     const { page, limit } = usersFilter;
-    query.limit(usersFilter.limit);
-    query.take((page - 1) * limit);
-
+    query.limit(limit).take((page - 1) * limit);
     return await query.getMany();
   }
 
