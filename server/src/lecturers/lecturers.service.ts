@@ -162,6 +162,10 @@ export class LecturersService {
         lecturer.password = hashedPassword;
       }
 
+      if (updateLecturerDto.isActive !== undefined) {
+        lecturer.isActive = updateLecturerDto.isActive;
+      }
+
       return await this.lecturersRepositoty.save(lecturer);
     } catch (error) {
       throw new InternalServerErrorException({

@@ -115,7 +115,7 @@ export default function CreateLecturerPage() {
           <Button
             variant="solid"
             color="danger"
-            onClick={() => router.push("/students")}
+            onClick={() => router.push("/lecturers")}
           >
             <RollbackOutlined />
             Quay lại
