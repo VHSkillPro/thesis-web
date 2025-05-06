@@ -10,132 +10,133 @@ import { useAuth } from "@/context/AuthContext";
 import { User } from "@/types/user";
 
 export default function Login() {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const { notifySuccess, notifyError } = useNotification();
-    const { login } = useAuth();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const { notifySuccess, notifyError } = useNotification();
+  const { login, logout } = useAuth();
 
-    const onFinish = async (formData: LoginFormData) => {
-        setLoading(true);
-        const response = await loginAction(formData);
-        if (response.success) {
-            try {
-                const meResponse = await fetch("/api/auth/me");
-                const json = await meResponse.json();
-                if (json.success) {
-                    login(json.data as User);
-                    notifySuccess(response.message);
-                    router.push("/");
-                }
-            } catch (error) {
-                notifyError("Đã xảy ra lỗi khi lấy thông tin người dùng.");
-            }
+  const onFinish = async (formData: LoginFormData) => {
+    setLoading(true);
+    const response = await loginAction(formData);
+    if (response.success) {
+      try {
+        const meResponse = await fetch("/api/auth/me");
+        const json = await meResponse.json();
+        if (json.success && json.data.roleId !== "student") {
+          login(json.data as User);
+          notifySuccess(response.message);
+          router.push("/");
         } else {
-            notifyError(response.message);
+          await fetch("/api/auth/logout");
+          notifyError("Bạn không có quyền truy cập vào trang này.");
         }
-        setLoading(false);
-    };
+      } catch (error) {
+        await fetch("/api/auth/logout");
+        notifyError("Đã xảy ra lỗi khi lấy thông tin người dùng.");
+      }
+    } else {
+      await fetch("/api/auth/logout");
+      notifyError(response.message);
+    }
+    setLoading(false);
+  };
 
-    return (
-        <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
-            <Content
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
+  return (
+    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+      <Content
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Card
+          style={{
+            width: 450,
+            borderRadius: 16,
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <Space
+            direction="vertical"
+            size="middle"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <Typography.Title
+              level={1}
+              style={{
+                textAlign: "center",
+                marginTop: 6,
+                marginBottom: 32,
+              }}
             >
-                <Card
-                    style={{
-                        width: 450,
-                        borderRadius: 16,
-                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    }}
-                >
-                    <Space
-                        direction="vertical"
-                        size="middle"
-                        style={{ display: "flex", alignItems: "center" }}
-                    >
-                        <Typography.Title
-                            level={1}
-                            style={{
-                                textAlign: "center",
-                                marginTop: 6,
-                                marginBottom: 32,
-                            }}
-                        >
-                            Đăng nhập
-                        </Typography.Title>
-                    </Space>
+              Đăng nhập
+            </Typography.Title>
+          </Space>
 
-                    <Form
-                        name="normal_login"
-                        className="login-form"
-                        onFinish={onFinish}
-                    >
-                        <Form.Item
-                            name="username"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Vui lòng nhập tên đăng nhập!",
-                                },
-                            ]}
-                        >
-                            <Input
-                                prefix={
-                                    <UserOutlined
-                                        className="site-form-item-icon"
-                                        style={{ marginRight: 5 }}
-                                    />
-                                }
-                                placeholder="Tên đăng nhập"
-                                size="large"
-                                disabled={loading}
-                            />
-                        </Form.Item>
+          <Form name="normal_login" className="login-form" onFinish={onFinish}>
+            <Form.Item
+              name="username"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập tên đăng nhập!",
+                },
+              ]}
+            >
+              <Input
+                prefix={
+                  <UserOutlined
+                    className="site-form-item-icon"
+                    style={{ marginRight: 5 }}
+                  />
+                }
+                placeholder="Tên đăng nhập"
+                size="large"
+                disabled={loading}
+              />
+            </Form.Item>
 
-                        <Form.Item
-                            name="password"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Vui lòng nhập mật khẩu!",
-                                },
-                            ]}
-                            style={{ marginTop: 40 }}
-                        >
-                            <Input.Password
-                                prefix={
-                                    <LockOutlined
-                                        className="site-form-item-icon"
-                                        style={{ marginRight: 5 }}
-                                    />
-                                }
-                                type="password"
-                                placeholder="Mật khẩu"
-                                size="large"
-                                disabled={loading}
-                            />
-                        </Form.Item>
+            <Form.Item
+              name="password"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập mật khẩu!",
+                },
+              ]}
+              style={{ marginTop: 40 }}
+            >
+              <Input.Password
+                prefix={
+                  <LockOutlined
+                    className="site-form-item-icon"
+                    style={{ marginRight: 5 }}
+                  />
+                }
+                type="password"
+                placeholder="Mật khẩu"
+                size="large"
+                disabled={loading}
+              />
+            </Form.Item>
 
-                        <Form.Item style={{ marginTop: 40 }}>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                className="login-form-button"
-                                style={{ width: "100%" }}
-                                size="large"
-                                disabled={loading}
-                                loading={loading}
-                            >
-                                Đăng nhập
-                            </Button>
-                        </Form.Item>
-                    </Form>
-                </Card>
-            </Content>
-        </Layout>
-    );
+            <Form.Item style={{ marginTop: 40 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                className="login-form-button"
+                style={{ width: "100%" }}
+                size="large"
+                disabled={loading}
+                loading={loading}
+              >
+                Đăng nhập
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Content>
+    </Layout>
+  );
 }

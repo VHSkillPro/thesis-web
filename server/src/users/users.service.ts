@@ -1,8 +1,16 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { UsersFilterDto } from './dto/user-filter.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import UsersMessage from './users.message';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -97,5 +105,40 @@ export class UsersService {
         username,
       },
     });
+  }
+
+  /**
+   * Changes the password of a user.
+   *
+   * @param username - The username of the user whose password is to be changed.
+   * @param formData - An object containing the old password and the new password.
+   * @throws {NotFoundException} If the user with the given username is not found.
+   * @throws {BadRequestException} If the provided old password does not match the user's current password.
+   * @throws {InternalServerErrorException} If an unexpected error occurs during the password change process.
+   * @returns A promise that resolves to the updated user entity after the password has been successfully changed.
+   */
+  async changePassword(username: string, formData: ChangePasswordDto) {
+    try {
+      const user = await this.findOne(username);
+      if (!user) {
+        throw new NotFoundException({
+          message: UsersMessage.ERROR.NOT_FOUND,
+        });
+      }
+
+      if (!(await bcrypt.compare(formData.oldPassword, user.password))) {
+        throw new BadRequestException({
+          message: UsersMessage.ERROR.WRONG_PASSWORD,
+        });
+      }
+
+      user.password = await bcrypt.hash(formData.password, 10);
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: UsersMessage.ERROR.CHANGE_PASSWORD,
+      });
+    }
   }
 }

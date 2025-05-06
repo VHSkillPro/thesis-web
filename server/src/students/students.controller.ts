@@ -13,7 +13,6 @@ import {
   Post,
   Query,
   Request,
-  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -28,18 +27,14 @@ import {
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import StudentsMessage, {
-  StudentsMessageError,
-  StudentsMessageSuccess,
-} from './students.message';
+import StudentsMessage from './students.message';
 import { Roles } from 'src/role/role.decorator';
 import { Role } from 'src/role/role.enum';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { UpdateStudentDto } from './dto/update-student.dto';
-import { Response } from 'express';
-import { createReadStream, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import AuthMessage from 'src/auth/auth.message';
 
@@ -148,7 +143,7 @@ export class StudentsController {
     card: Express.Multer.File,
   ) {
     await this.studentsService.create(createStudentDto, card);
-    return new BaseResponseDto(StudentsMessageSuccess.CREATE);
+    return new BaseResponseDto(StudentsMessage.SUCCESS.CREATE);
   }
 
   @Patch(':id')
@@ -181,13 +176,13 @@ export class StudentsController {
     card?: Express.Multer.File,
   ) {
     await this.studentsService.update(studentId, updateStudentDto, card);
-    return new BaseResponseDto(StudentsMessageSuccess.UPDATE);
+    return new BaseResponseDto(StudentsMessage.SUCCESS.UPDATE);
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async delete(@Param('id') studentId: string) {
     await this.studentsService.delete(studentId);
-    return new BaseResponseDto(StudentsMessageSuccess.DELETE);
+    return new BaseResponseDto(StudentsMessage.SUCCESS.DELETE);
   }
 }

@@ -13,6 +13,7 @@ export default class UsersMessage {
   static readonly SUCCESS = {
     FIND_ALL: 'Lấy danh sách người dùng thành công',
     FIND_ONE: 'Lấy thông tin người dùng thành công',
+    CHANGE_PASSWORD: 'Đổi mật khẩu thành công',
   };
 
   static readonly ERROR = {
@@ -20,5 +21,7 @@ export default class UsersMessage {
     FIND_ONE: 'Lấy thông tin người dùng thất bại',
     NOT_FOUND: 'Người dùng không tồn tại',
     ALREADY_EXISTS: 'Người dùng đã tồn tại',
+    WRONG_PASSWORD: 'Mật khẩu không đúng',
+    CHANGE_PASSWORD: 'Đổi mật khẩu thất bại',
   };
 }
