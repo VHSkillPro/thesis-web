@@ -1,22 +1,26 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
-import { Breadcrumb } from "antd";
+import { useEffect, useState } from "react";
+import { Breadcrumb, Space } from "antd";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BreadcrumbItemType } from "antd/es/breadcrumb/Breadcrumb";
 
 const breadcrumbNameMap: { [key: string]: string } = {
   "/": "Trang chủ",
   "/students": "Sinh viên",
+  "/lecturers": "Giảng viên",
+  "/classes": "Lớp học",
   "/create": "Thêm",
+  "/profile": "Thông tin cá nhân",
 };
 
 const generateBreadcrumbName = (segment: string): string => {
   if (breadcrumbNameMap[`/${segment}`]) {
     return breadcrumbNameMap[`/${segment}`];
   }
-  if (segment.match(/^[0-9a-fA-F]{24}$/) || !isNaN(Number(segment))) {
-    return `Chi tiết (${segment.substring(0, 6)}...)`;
+
+  if (segment.match(/^[0-9a-zA-Z]+$/) || !isNaN(Number(segment))) {
+    return `Chi tiết ${segment}`;
   }
 
   try {
@@ -29,19 +33,21 @@ const generateBreadcrumbName = (segment: string): string => {
   }
 };
 
-const AppBreadcrumb: React.FC = () => {
+export default function AppBreadcrumb() {
   const pathname = usePathname();
-  const [breadcrumbItems, setBreadcrumbItems] = useState<React.ReactNode[]>([]);
+  const [breadcrumbItems, setBreadcrumbItems] = useState<BreadcrumbItemType[]>(
+    []
+  );
 
   useEffect(() => {
     if (!pathname) return;
 
     const pathSegments = pathname.split("/").filter((segment) => segment);
 
-    const items: React.ReactNode[] = [
-      <Breadcrumb.Item key="home">
-        <Link href="/">Trang chủ</Link>
-      </Breadcrumb.Item>,
+    const items: BreadcrumbItemType[] = [
+      {
+        title: <Link href="/">Trang chủ</Link>,
+      },
     ];
 
     let currentPath = "";
@@ -50,27 +56,23 @@ const AppBreadcrumb: React.FC = () => {
       const isLast = index === pathSegments.length - 1;
       const displayName = generateBreadcrumbName(segment);
 
-      items.push(
-        <Breadcrumb.Item key={currentPath}>
-          {isLast ? (
-            <span>{displayName}</span>
-          ) : (
-            <Link href={currentPath}>{displayName}</Link>
-          )}
-        </Breadcrumb.Item>
-      );
+      items.push({
+        key: currentPath,
+        title: isLast ? (
+          <span>{displayName}</span>
+        ) : (
+          <Link href={currentPath}>{displayName}</Link>
+        ),
+      });
     });
 
     setBreadcrumbItems(items);
   }, [pathname]);
 
-  if (breadcrumbItems.length <= 1) {
-    return null;
-  }
-
   return (
-    <Breadcrumb style={{ margin: "16px 0" }}>{breadcrumbItems}</Breadcrumb>
+    <Breadcrumb
+      style={{ margin: "16px 0" }}
+      items={breadcrumbItems}
+    ></Breadcrumb>
   );
-};
-
-export default AppBreadcrumb;
+}
