@@ -17,7 +17,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusCircleOutlined,
-  UserAddOutlined,
 } from "@ant-design/icons";
 import ClassesFilter from "@/components/(dashboard)/classes/ClassesFilter";
 
