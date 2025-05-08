@@ -12,7 +12,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MetaDto } from "@/types/meta";
-import { ClassesFilterDto, getClassesAction } from "./action";
+import {
+  ClassesFilterDto,
+  deleteClassAction,
+  getClassesAction,
+} from "./action";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -74,6 +78,27 @@ export default function ClassesPage() {
     getClasses(classesFilter);
   }, [classesFilter]);
 
+  const onDeleteClasses = async (id: string) => {
+    const response = await deleteClassAction(id);
+    if (response.success) {
+      notifySuccess(response.message);
+      const newFilter = {
+        ...classesFilter,
+      };
+
+      if (meta) {
+        const maxPages = Math.ceil((meta.total - 1) / meta.limit);
+        if (newFilter.page && newFilter.page > maxPages) {
+          newFilter.page = maxPages;
+        }
+      }
+
+      setClassesFilter(newFilter);
+    } else {
+      notifyError(response.message);
+    }
+  };
+
   const columns: TableProps<DataType>["columns"] = [
     {
       title: "Mã lớp học",
@@ -114,7 +139,7 @@ export default function ClassesPage() {
             okText="Có"
             cancelText="Không"
             placement="topRight"
-            // onConfirm={() => onDeleteLecturer(record.username)}
+            onConfirm={() => onDeleteClasses(record.id)}
             description={
               <Typography.Text>
                 Bạn không thể xóa lớp này <br /> nếu như có dữ liệu khác liên
