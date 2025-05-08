@@ -49,7 +49,7 @@ export class StudentsClassesService {
     query.andWhere('students_classes.classId = :classId', { classId });
 
     if (studentsFilterDto.username) {
-      query.andWhere('student.username ILKIE :username', {
+      query.andWhere('student.username ILIKE :username', {
         username: `%${studentsFilterDto.username}%`,
       });
     }
@@ -72,7 +72,7 @@ export class StudentsClassesService {
       });
     }
 
-    if (studentsFilterDto.isActive) {
+    if (studentsFilterDto.isActive !== undefined) {
       query.andWhere('student.isActive = :isActive', {
         isActive: studentsFilterDto.isActive,
       });
@@ -140,7 +140,7 @@ export class StudentsClassesService {
         course: student.course,
         className: student.className,
         isActive: student.isActive,
-        card: base64Card,
+        card: `data:image/png;base64,${base64Card}`,
       };
     });
   }
