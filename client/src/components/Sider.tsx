@@ -1,4 +1,5 @@
 "use client";
+import { useAuth } from "@/context/AuthContext";
 import { HomeOutlined, ReadOutlined, UserOutlined } from "@ant-design/icons";
 import { Menu, Space, Typography } from "antd";
 import Sider from "antd/es/layout/Sider";
@@ -23,6 +24,7 @@ const siderStyle: React.CSSProperties = {
 export default function MySider(props: SiderProps) {
   const router = useRouter();
   const path = usePathname();
+  const { user } = useAuth();
 
   const menuItems = [
     {
@@ -44,15 +46,6 @@ export default function MySider(props: SiderProps) {
       },
     },
     {
-      key: "lecturers",
-      icon: <UserOutlined />,
-      label: "Giảng viên",
-      style: { fontWeight: "bold" },
-      onClick: () => {
-        router.push("/lecturers");
-      },
-    },
-    {
       key: "classes",
       icon: <ReadOutlined />,
       label: "Lớp học",
@@ -62,6 +55,18 @@ export default function MySider(props: SiderProps) {
       },
     },
   ];
+
+  if (user?.roleId === "admin") {
+    menuItems.push({
+      key: "lecturers",
+      icon: <UserOutlined />,
+      label: "Giảng viên",
+      style: { fontWeight: "bold" },
+      onClick: () => {
+        router.push("/lecturers");
+      },
+    });
+  }
 
   useEffect(() => {}, [path]);
 
