@@ -125,3 +125,79 @@ export const getStudentsClassAction = async (
     };
   }
 };
+
+export const addStudentToClassAction = async (
+  id: string,
+  studentId: string
+) => {
+  try {
+    const accessToken = await getAccessToken();
+    const response = await fetch(
+      `${BASE_URL}/classes/${id}/students/${studentId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        next: {
+          tags: ["students"],
+        },
+      }
+    );
+
+    const body = await response.json();
+    if (response.ok) {
+      revalidateTag("students");
+    }
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...body,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      statusCode: 500,
+      message: "Lỗi máy chủ",
+    };
+  }
+};
+
+export const deleteStudentFromClassAction = async (
+  id: string,
+  studentId: string
+) => {
+  try {
+    const accessToken = await getAccessToken();
+    const response = await fetch(
+      `${BASE_URL}/classes/${id}/students/${studentId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        next: {
+          tags: ["students"],
+        },
+      }
+    );
+
+    const body = await response.json();
+    if (response.ok) {
+      revalidateTag("students");
+    }
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...body,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      statusCode: 500,
+      message: "Lỗi máy chủ",
+    };
+  }
+};

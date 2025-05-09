@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
             bodySizeLimit: "10mb",
         },
     },
+    allowedDevOrigins: ["https://nvhai090903.id.vn"],
 };
 
 export default nextConfig;

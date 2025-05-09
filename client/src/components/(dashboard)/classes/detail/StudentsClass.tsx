@@ -1,5 +1,9 @@
 "use client";
-import { getStudentsClassAction } from "@/app/(dashboard)/classes/[id]/action";
+import {
+  addStudentToClassAction,
+  deleteStudentFromClassAction,
+  getStudentsClassAction,
+} from "@/app/(dashboard)/classes/[id]/action";
 import { StudentFilterDto } from "@/app/(dashboard)/students/action";
 import { useNotification } from "@/context/NotificationContext";
 import Meta from "@/types/meta";
@@ -12,14 +16,15 @@ import {
   Badge,
   Button,
   Col,
+  Form,
   Image,
+  Input,
   Popconfirm,
   Row,
   Table,
   TableProps,
   Typography,
 } from "antd";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StudentFilterComponent from "../../students/StudentFilter";
 
@@ -37,10 +42,12 @@ interface DataType {
   isActive: boolean;
 }
 
+interface AddStudentToClassForm {
+  username: string;
+}
+
 export default function StudentsClass(props: StudentsClassProps) {
   const LIMIT_PER_PAGE = 5;
-
-  const router = useRouter();
   const { notifySuccess, notifyError } = useNotification();
 
   const [isFetching, setIsFetching] = useState<boolean>(false);
@@ -55,6 +62,8 @@ export default function StudentsClass(props: StudentsClassProps) {
     page: 1,
     limit: LIMIT_PER_PAGE,
   });
+
+  const [form] = Form.useForm<AddStudentToClassForm>();
 
   const getStudentsClass = async () => {
     setIsFetching(true);
@@ -72,6 +81,46 @@ export default function StudentsClass(props: StudentsClassProps) {
       notifyError(response.message);
     }
 
+    setIsFetching(false);
+  };
+
+  const onFinishAddStudentToClass = async (values: AddStudentToClassForm) => {
+    setIsFetching(true);
+    const response = await addStudentToClassAction(props.id, values.username);
+    if (response.success) {
+      notifySuccess(response.message);
+      form.resetFields();
+
+      const newFilter = {
+        ...studentsFilter,
+      };
+      setStudentsFilter(newFilter);
+    } else {
+      notifyError(response.message);
+    }
+    setIsFetching(false);
+  };
+
+  const onDeleteStudentFromClass = async (username: string) => {
+    setIsFetching(true);
+    const response = await deleteStudentFromClassAction(props.id, username);
+    if (response.success) {
+      notifySuccess(response.message);
+      const newFilter = {
+        ...studentsFilter,
+      };
+
+      if (meta) {
+        const maxPages = Math.ceil((meta.total - 1) / meta.limit);
+        if (newFilter.page && newFilter.page > maxPages) {
+          newFilter.page = maxPages;
+        }
+      }
+
+      setStudentsFilter(newFilter);
+    } else {
+      notifyError(response.message);
+    }
     setIsFetching(false);
   };
 
@@ -136,7 +185,7 @@ export default function StudentsClass(props: StudentsClassProps) {
             okText="Có"
             cancelText="Không"
             placement="topLeft"
-            // onConfirm={() => onDeleteStudent(record.username)}
+            onConfirm={() => onDeleteStudentFromClass(record.username)}
           >
             <Button color="danger" variant="filled" style={{ marginLeft: 8 }}>
               <DeleteOutlined></DeleteOutlined>
@@ -156,21 +205,36 @@ export default function StudentsClass(props: StudentsClassProps) {
         </Typography.Title>
       </Row>
       <Row>
-        <Col>
+        <Col span={16}>
           <StudentFilterComponent
             filter={studentsFilter}
             setFilter={setStudentsFilter}
           ></StudentFilterComponent>
         </Col>
-        <Col style={{ marginLeft: "auto", display: "flex", alignItems: "end" }}>
-          <Button
-            color="primary"
-            variant="solid"
-            // onClick={() => router.push("/students/create")}
+        <Col
+          style={{ display: "flex", alignItems: "end", justifyContent: "end" }}
+          span={8}
+        >
+          <Form
+            form={form}
+            layout="inline"
+            style={{ display: "flex", alignItems: "end" }}
+            onFinish={onFinishAddStudentToClass}
           >
-            <UserAddOutlined></UserAddOutlined>
-            Thêm sinh viên
-          </Button>
+            <Form.Item
+              name="username"
+              label="Mã sinh viên"
+              layout="vertical"
+              required
+              rules={[{ required: true, message: "" }]}
+            >
+              <Input placeholder="Nhập mã sinh viên cần thêm"></Input>
+            </Form.Item>
+            <Button htmlType="submit" color="primary" variant="solid">
+              <UserAddOutlined></UserAddOutlined>
+              Thêm sinh viên
+            </Button>
+          </Form>
         </Col>
       </Row>
       <Table<DataType>
