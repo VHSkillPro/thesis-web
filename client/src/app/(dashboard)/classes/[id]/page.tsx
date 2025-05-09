@@ -16,6 +16,7 @@ import { getClassDetailAction, updateClassAction } from "./action";
 import { getAllLecturersAction, LecturerDto } from "../../lecturers/action";
 import { EditOutlined, RollbackOutlined } from "@ant-design/icons";
 import StudentsClass from "@/components/(dashboard)/classes/detail/StudentsClass";
+import { useAuth } from "@/context/AuthContext";
 
 interface UpdatedClassForm {
   id: string;
@@ -24,6 +25,7 @@ interface UpdatedClassForm {
 }
 
 export default function ClassDetailPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { notifySuccess, notifyError } = useNotification();
@@ -117,16 +119,23 @@ export default function ClassDetailPage() {
         <Form.Item
           name="name"
           label={<strong>Tên lớp học</strong>}
-          required
+          required={user?.roleId === "admin"}
           rules={[{ required: true, message: "Vui lòng nhập tên lớp học" }]}
         >
-          {isFetching ? <Skeleton.Input active block /> : <Input />}
+          {isFetching ? (
+            <Skeleton.Input active block />
+          ) : (
+            <Input
+              disabled={user?.roleId !== "admin"}
+              style={{ color: "rgba(0, 0, 0, 0.85)" }}
+            />
+          )}
         </Form.Item>
 
         <Form.Item
           name="lecturerId"
           label={<strong>Giảng viên phụ trách</strong>}
-          required
+          required={user?.roleId === "admin"}
           rules={[
             { required: true, message: "Vui lòng chọn giảng viên phụ trách" },
           ]}
@@ -139,13 +148,19 @@ export default function ClassDetailPage() {
           {isFetching ? (
             <Skeleton.Input active block />
           ) : (
-            <Select showSearch placeholder="Chọn giảng viên phụ trách">
+            <Select
+              showSearch
+              placeholder="Chọn giảng viên phụ trách"
+              disabled={user?.roleId !== "admin"}
+            >
               {lecturers.map((lecturer) => (
                 <Select.Option
                   key={lecturer.username}
                   value={lecturer.username}
                 >
-                  {lecturer.username} - {lecturer.fullname}
+                  <Typography.Text>
+                    {lecturer.username} - {lecturer.fullname}
+                  </Typography.Text>
                 </Select.Option>
               ))}
             </Select>
@@ -158,6 +173,7 @@ export default function ClassDetailPage() {
             color="primary"
             style={{ marginRight: 10 }}
             htmlType="submit"
+            disabled={user?.roleId !== "admin"}
           >
             <EditOutlined></EditOutlined>
             Cập nhật
@@ -167,6 +183,7 @@ export default function ClassDetailPage() {
             color="primary"
             style={{ marginRight: 10 }}
             htmlType="submit"
+            disabled={user?.roleId !== "admin"}
             onClick={() => setIsContinuing(true)}
           >
             <EditOutlined></EditOutlined>

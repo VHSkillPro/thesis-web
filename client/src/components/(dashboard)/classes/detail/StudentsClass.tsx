@@ -27,6 +27,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import StudentFilterComponent from "../../students/StudentFilter";
+import { useAuth } from "@/context/AuthContext";
 
 interface StudentsClassProps {
   id: string;
@@ -49,6 +50,7 @@ interface AddStudentToClassForm {
 export default function StudentsClass(props: StudentsClassProps) {
   const LIMIT_PER_PAGE = 5;
   const { notifySuccess, notifyError } = useNotification();
+  const { user } = useAuth();
 
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [students, setStudents] = useState<DataType[]>([]);
@@ -187,7 +189,12 @@ export default function StudentsClass(props: StudentsClassProps) {
             placement="topLeft"
             onConfirm={() => onDeleteStudentFromClass(record.username)}
           >
-            <Button color="danger" variant="filled" style={{ marginLeft: 8 }}>
+            <Button
+              color="danger"
+              variant="filled"
+              style={{ marginLeft: 8 }}
+              disabled={user?.roleId !== "admin"}
+            >
               <DeleteOutlined></DeleteOutlined>
               Xóa khỏi lớp
             </Button>
@@ -225,12 +232,20 @@ export default function StudentsClass(props: StudentsClassProps) {
               name="username"
               label="Mã sinh viên"
               layout="vertical"
-              required
+              required={user?.roleId === "admin"}
               rules={[{ required: true, message: "" }]}
             >
-              <Input placeholder="Nhập mã sinh viên cần thêm"></Input>
+              <Input
+                placeholder="Nhập mã sinh viên cần thêm"
+                disabled={user?.roleId !== "admin"}
+              ></Input>
             </Form.Item>
-            <Button htmlType="submit" color="primary" variant="solid">
+            <Button
+              htmlType="submit"
+              color="primary"
+              variant="solid"
+              disabled={user?.roleId !== "admin"}
+            >
               <UserAddOutlined></UserAddOutlined>
               Thêm sinh viên
             </Button>
