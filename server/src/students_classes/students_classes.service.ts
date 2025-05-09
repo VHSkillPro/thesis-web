@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -237,6 +238,11 @@ export class StudentsClassesService {
       });
       return await this.studentsClassesRepository.insert(newStudentClass);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error(error);
       throw new InternalServerErrorException({
         message: StudentsClassesMessage.ERROR.CREATE,
       });
@@ -275,6 +281,10 @@ export class StudentsClassesService {
 
       return await this.studentsClassesRepository.delete(studentClass);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: StudentsClassesMessage.ERROR.DELETE,
       });
