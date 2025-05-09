@@ -26,4 +26,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY . .
 
+FROM builder AS production
+
+CMD ["flask", "run", "--host=0.0.0.0"]
+
+FROM builder AS dev
+
 CMD ["flask", "run", "--debug", "--host=0.0.0.0"]
