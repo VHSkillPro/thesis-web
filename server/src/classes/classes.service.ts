@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -158,6 +159,10 @@ export class ClassesService {
 
       return await this.classesRepository.update(id, classToUpdate);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: ClassesMessage.ERROR.UPDATE,
       });
@@ -187,6 +192,10 @@ export class ClassesService {
 
       return await this.classesRepository.delete(id);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: ClassesMessage.ERROR.DELETE,
       });

@@ -117,3 +117,79 @@ export async function deleteLecturerAction(username: string) {
     };
   }
 }
+
+export async function getAllLecturersAction() {
+  try {
+    const accessToken = await getAccessToken();
+    const firstRes = await fetch(`${BASE_URL}/lecturers`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      next: {
+        tags: ["lecturers"],
+      },
+    });
+
+    const firstBody = await firstRes.json();
+    if (!firstRes.ok) {
+      return {
+        success: false,
+        statusCode: firstRes.status,
+        ...firstBody,
+      };
+    }
+
+    const totalPages = firstBody.meta.pages;
+    const allLecturers: LecturerDto[] = [...firstBody.data];
+
+    const promises = [];
+    for (let i = 2; i <= totalPages; i++) {
+      promises.push(
+        fetch(`${BASE_URL}/lecturers?page=${i}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          next: {
+            tags: ["lecturers"],
+          },
+        })
+      );
+    }
+
+    const responses = await Promise.all(promises);
+    for (const res of responses) {
+      const body = await res.json();
+      if (res.ok) {
+        allLecturers.push(...body.data);
+      } else {
+        return {
+          success: false,
+          statusCode: res.status,
+          ...body,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      data: allLecturers,
+      meta: {
+        total: allLecturers.length,
+        page: 1,
+        limit: allLecturers.length,
+        pages: 1,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      statusCode: 500,
+      message: "Lỗi máy chủ",
+    };
+  }
+}

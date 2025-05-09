@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -49,7 +50,7 @@ export class StudentsClassesService {
     query.andWhere('students_classes.classId = :classId', { classId });
 
     if (studentsFilterDto.username) {
-      query.andWhere('student.username ILKIE :username', {
+      query.andWhere('student.username ILIKE :username', {
         username: `%${studentsFilterDto.username}%`,
       });
     }
@@ -72,7 +73,7 @@ export class StudentsClassesService {
       });
     }
 
-    if (studentsFilterDto.isActive) {
+    if (studentsFilterDto.isActive !== undefined) {
       query.andWhere('student.isActive = :isActive', {
         isActive: studentsFilterDto.isActive,
       });
@@ -140,7 +141,7 @@ export class StudentsClassesService {
         course: student.course,
         className: student.className,
         isActive: student.isActive,
-        card: base64Card,
+        card: `data:image/png;base64,${base64Card}`,
       };
     });
   }
@@ -237,6 +238,11 @@ export class StudentsClassesService {
       });
       return await this.studentsClassesRepository.insert(newStudentClass);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error(error);
       throw new InternalServerErrorException({
         message: StudentsClassesMessage.ERROR.CREATE,
       });
@@ -275,6 +281,10 @@ export class StudentsClassesService {
 
       return await this.studentsClassesRepository.delete(studentClass);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: StudentsClassesMessage.ERROR.DELETE,
       });

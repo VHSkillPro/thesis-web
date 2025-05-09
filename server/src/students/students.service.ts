@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -126,7 +127,6 @@ export class StudentsService {
     try {
       const user = await this.usersService.findOne(createStudentDto.username);
       if (user) {
-        removeFile(card.path);
         throw new BadRequestException({
           message: StudentsMessage.ERROR.ALREADY_EXISTS,
         });
@@ -141,8 +141,13 @@ export class StudentsService {
 
       return await this.studentsRepository.insert(newStudent);
     } catch (error) {
-      console.log(error);
       removeFile(card.path);
+
+      if (error instanceof HttpException) {
+        throw error; // Rethrow the BadRequestException
+      }
+
+      console.log(error);
       throw new InternalServerErrorException({
         message: StudentsMessage.ERROR.CREATE,
       });
@@ -192,10 +197,15 @@ export class StudentsService {
 
       return await this.studentsRepository.save(newStudent);
     } catch (error) {
-      console.log(error);
       if (card) {
         removeFile(card.path);
       }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.log(error);
       throw new InternalServerErrorException({
         message: StudentsMessage.ERROR.UPDATE,
       });
@@ -250,6 +260,10 @@ export class StudentsService {
         }
       });
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error; // Rethrow the NotFoundException
+      }
+
       console.log(error);
       throw new InternalServerErrorException({
         message: StudentsMessage.ERROR.DELETE,

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   forwardRef,
+  HttpException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -207,7 +208,6 @@ export class FacesService {
       );
 
       if (!isMatch) {
-        removeFile(selfie.path);
         throw new BadRequestException({
           message: StudentsMessage.ERROR.CARD_SELFIE_NOT_MATCH,
         });
@@ -223,6 +223,11 @@ export class FacesService {
       return await this.facesRepository.insert(face);
     } catch (error) {
       removeFile(selfie.path);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: FacesMessage.ERROR.CREATE,
       });
@@ -266,6 +271,10 @@ export class FacesService {
         removeFile(facePath);
       }
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: FacesMessage.ERROR.DELETE,
       });

@@ -8,6 +8,7 @@ import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 import { LecturersFilterDto } from './dto/lecturers-filter.dto';
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -123,6 +124,10 @@ export class LecturersService {
 
       return await this.lecturersRepositoty.insert(newLecturer);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: LecturersMessage.ERROR.CREATE,
       });
@@ -168,6 +173,10 @@ export class LecturersService {
 
       return await this.lecturersRepositoty.save(lecturer);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: LecturersMessage.ERROR.UPDATE,
       });
@@ -193,6 +202,10 @@ export class LecturersService {
 
       return await this.lecturersRepositoty.delete({ username });
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException({
         message: LecturersMessage.ERROR.DELETE,
       });

@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -135,6 +136,10 @@ export class UsersService {
       user.password = await bcrypt.hash(formData.password, 10);
       return await this.usersRepository.save(user);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       console.error(error);
       throw new InternalServerErrorException({
         message: UsersMessage.ERROR.CHANGE_PASSWORD,

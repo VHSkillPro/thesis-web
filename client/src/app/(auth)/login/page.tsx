@@ -13,7 +13,7 @@ export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { notifySuccess, notifyError } = useNotification();
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
 
   const onFinish = async (formData: LoginFormData) => {
     setLoading(true);

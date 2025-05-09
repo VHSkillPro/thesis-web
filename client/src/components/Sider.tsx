@@ -1,5 +1,5 @@
 "use client";
-import { BankOutlined, HomeOutlined, UserOutlined } from "@ant-design/icons";
+import { HomeOutlined, ReadOutlined, UserOutlined } from "@ant-design/icons";
 import { Menu, Space, Typography } from "antd";
 import Sider from "antd/es/layout/Sider";
 import { usePathname, useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export default function MySider(props: SiderProps) {
     },
     {
       key: "classes",
-      icon: <BankOutlined />,
+      icon: <ReadOutlined />,
       label: "Lớp học",
       style: { fontWeight: "bold" },
       onClick: () => {

@@ -3,28 +3,28 @@ import { BASE_URL } from "@/config";
 import { getAccessToken } from "@/utils/tokens";
 import { revalidateTag } from "next/cache";
 
-export interface CreateLecturerDto {
-  username: string;
-  password: string;
-  fullname: string;
-  isActive: boolean;
+export interface CreateClassesDto {
+  id: string;
+  name: string;
+  lecturerId: string;
 }
 
-export const createLecturerAction = async (formData: CreateLecturerDto) => {
+export const createClassesAction = async (values: CreateClassesDto) => {
   try {
     const accessToken = await getAccessToken();
-    const response = await fetch(`${BASE_URL}/lecturers`, {
+
+    const response = await fetch(`${BASE_URL}/classes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(values),
     });
 
     const body = await response.json();
     if (response.ok) {
-      revalidateTag("lecturers");
+      revalidateTag("classes");
     }
     return {
       success: response.ok,
