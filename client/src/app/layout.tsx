@@ -1,6 +1,5 @@
 import "@ant-design/v5-patch-for-react-19";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -8,41 +7,27 @@ import { Suspense } from "react";
 import Loading from "./loading";
 import { AuthProvider } from "@/context/AuthContext";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
-    subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-    title: "MSAA",
-    description: "Hệ thống quản lý dữ liệu điểm danh tự động",
+  title: "MSAA",
+  description: "Hệ thống quản lý dữ liệu điểm danh tự động",
 };
 
 export default function RootLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    return (
-        <html lang="en">
-            <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-            >
-                <AntdRegistry>
-                    <NotificationProvider>
-                        <AuthProvider>
-                            <Suspense fallback={<Loading />}>
-                                {children}
-                            </Suspense>
-                        </AuthProvider>
-                    </NotificationProvider>
-                </AntdRegistry>
-            </body>
-        </html>
-    );
+  return (
+    <html lang="en">
+      <body className={`antialiased`}>
+        <AntdRegistry>
+          <NotificationProvider>
+            <AuthProvider>
+              <Suspense fallback={<Loading />}>{children}</Suspense>
+            </AuthProvider>
+          </NotificationProvider>
+        </AntdRegistry>
+      </body>
+    </html>
+  );
 }

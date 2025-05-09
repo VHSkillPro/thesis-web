@@ -61,13 +61,13 @@ services:
         networks:
             - postgres
 
-    client: 
+    client:
         container_name: client
-        build: 
-          context: ./client
-          dockerfile: Dockerfile
-          target: dev
-        command: yarn dev
+        build:
+            context: ./client
+            dockerfile: Dockerfile
+            target: dev
+        ## Uncomment the following lines to enable hot reloading
         volumes:
             - ./client/:/app/
             - ./client/package.json:/app/package.json

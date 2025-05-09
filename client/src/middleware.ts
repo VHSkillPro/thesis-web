@@ -146,8 +146,6 @@ function redirectLogin(request: NextRequest) {
 }
 
 export default async function middleware(request: NextRequest) {
-    console.log("Middleware triggered", request.nextUrl.pathname);
-
     const cookies = request.cookies;
     const accessToken = cookies.get("accessToken")?.value || " ";
     const refreshToken = cookies.get("refreshToken")?.value;
