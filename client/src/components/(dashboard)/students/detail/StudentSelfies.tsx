@@ -3,7 +3,10 @@ import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Button, Image, Popconfirm, Table, Typography } from "antd";
 
 import AddStudentSelfie from "./AddStudentSelfie";
-import { getSelfiesAction } from "@/app/(dashboard)/students/[id]/action";
+import {
+  deleteSelfieAction,
+  getSelfiesAction,
+} from "@/app/(dashboard)/students/[id]/action";
 import { useNotification } from "@/context/NotificationContext";
 
 interface StudentSelfiesProps {
@@ -19,7 +22,7 @@ interface DataType {
 export default function StudentSelfies(props: StudentSelfiesProps) {
   const [selfies, setSelfies] = useState<DataType[]>([]);
   const [isFetching, setIsFetching] = useState<boolean>(false);
-  const { notifyError } = useNotification();
+  const { notifyError, notifySuccess } = useNotification();
 
   const getSelfies = async () => {
     setIsFetching(true);
@@ -37,6 +40,17 @@ export default function StudentSelfies(props: StudentSelfiesProps) {
     }
 
     setIsFetching(false);
+  };
+
+  const handleDeleteSelfie = async (id: string) => {
+    const response = await deleteSelfieAction(props.id, id);
+
+    if (response.success) {
+      getSelfies();
+      notifySuccess(response.message);
+    } else {
+      notifyError(response.message);
+    }
   };
 
   useEffect(() => {
@@ -70,6 +84,7 @@ export default function StudentSelfies(props: StudentSelfiesProps) {
             okText="Có"
             cancelText="Không"
             placement="topLeft"
+            onConfirm={() => handleDeleteSelfie(record.id)}
             description={
               <Typography.Text>
                 Xóa sinh viên sẽ xóa tất cả thông tin liên quan đên sinh viên

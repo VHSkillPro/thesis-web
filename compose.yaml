@@ -73,6 +73,7 @@ services:
             - ./client/package.json:/app/package.json
             - ./client/package-lock.json:/app/package-lock.json
             - client:/app/node_modules
+        #########################################################
         ports:
             - 80:3000
         environment:
