@@ -4,25 +4,22 @@ import {
   Col,
   Divider,
   Form,
-  Image,
   Input,
   Row,
-  Space,
-  Spin,
   Switch,
   Typography,
-  Upload,
 } from "antd";
 import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   getStudentDetailAction,
   updateStudentAction,
   UpdateStudentDto,
 } from "./action";
-import { useParams, useRouter } from "next/navigation";
+import Loading from "@/app/loading";
 import { useNotification } from "@/context/NotificationContext";
-import { RcFile } from "antd/es/upload";
 import { EditOutlined, RollbackOutlined } from "@ant-design/icons";
+import StudentCard from "@/components/(dashboard)/students/detail/StudentCard";
 
 interface StudentFormDto {
   username: string;
@@ -40,10 +37,9 @@ export default function StudentDetailPage() {
 
   const { id } = useParams<{ id: string }>();
   const [form] = Form.useForm<StudentFormDto>();
-  const [cardUri, setCardUri] = useState<string | undefined>(undefined);
-  const [isLoadingCard, setIsLoadingCard] = useState<boolean>(false);
   const [isFetching, setIsFetching] = useState<boolean>(true);
   const [isContinuing, setIsContinuing] = useState<boolean>(false);
+  const [cardUri, setCardUri] = useState<string | undefined>(undefined);
 
   const getStudentDetail = async (studentId: string) => {
     setIsFetching(true);
@@ -67,46 +63,7 @@ export default function StudentDetailPage() {
     setIsFetching(false);
   };
 
-  useEffect(() => {
-    getStudentDetail(id);
-  }, [id]);
-
-  const beforeUpload = (file: RcFile) => {
-    const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
-    if (!isJpgOrPng) {
-      notifyError("Bạn chỉ có thể tải lên ảnh JPG/PNG");
-      return Upload.LIST_IGNORE;
-    }
-    const isLt2M = file.size / 1024 / 1024 < 10;
-    if (!isLt2M) {
-      notifyError("Kích thước ảnh phải nhỏ hơn 10MB");
-      return Upload.LIST_IGNORE;
-    }
-    return false;
-  };
-
-  const onUploadCard = async (files: RcFile[]) => {
-    setIsLoadingCard(true);
-
-    if (files.length === 0) {
-      return;
-    }
-
-    const response = await updateStudentAction(id, {
-      card: files[0],
-    });
-
-    if (response.success) {
-      notifySuccess("Cập nhật thẻ sinh viên thành công");
-      getStudentDetail(id);
-    } else {
-      notifyError(response.message);
-    }
-
-    setIsLoadingCard(false);
-  };
-
-  const onFinish = async (values: StudentFormDto) => {
+  const handleSubmitForm = async (values: StudentFormDto) => {
     const body: UpdateStudentDto = {
       ...values,
       isActive: values.isActive,
@@ -133,32 +90,30 @@ export default function StudentDetailPage() {
     setIsContinuing(false);
   };
 
-  if (isFetching) {
-    return (
-      <Space
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <Spin></Spin>
-      </Space>
-    );
-  }
+  useEffect(() => {
+    getStudentDetail(id);
+  }, [id]);
 
-  return (
+  return isFetching ? (
+    <Loading />
+  ) : (
     <>
       <Typography.Title>Thông tin chi tiết sinh viên</Typography.Title>
       <Form
         layout="vertical"
         style={{ marginTop: 20 }}
         form={form}
-        onFinish={onFinish}
+        onFinish={handleSubmitForm}
       >
         <Row gutter={16}>
-          <Col span={18}>
+          <Col
+            span={19}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
             <Form.Item name="username" label={<strong>Mã sinh viên</strong>}>
               <Input disabled={true} style={{ fontWeight: "bold" }}></Input>
             </Form.Item>
@@ -184,35 +139,15 @@ export default function StudentDetailPage() {
               ></Switch>
             </Form.Item>
           </Col>
-          <Col span={6}>
-            <Row justify={"space-between"} align="top">
-              <Typography.Title level={5}>Thẻ sinh viên</Typography.Title>
-              <Upload
-                beforeUpload={beforeUpload}
-                showUploadList={false}
-                onChange={(file) => onUploadCard(file.fileList as RcFile[])}
-                maxCount={1}
-              >
-                <Button variant="filled" size="small">
-                  Tải ảnh thẻ sinh viên
-                </Button>
-              </Upload>
-            </Row>
-            {isLoadingCard ? (
-              <Space
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Spin></Spin>
-              </Space>
-            ) : (
-              <Image src={cardUri}></Image>
-            )}
+          <Col span={5}>
+            <StudentCard
+              id={id}
+              cardUri={cardUri}
+              afterUpload={async () => await getStudentDetail(id)}
+            />
           </Col>
         </Row>
+        <Divider />
         <Form.Item
           name="className"
           label={<strong>Lớp học</strong>}
