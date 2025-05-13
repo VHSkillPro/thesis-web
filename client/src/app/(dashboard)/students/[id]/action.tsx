@@ -1,6 +1,7 @@
 "use server";
 import { BASE_URL } from "@/config";
 import { getAccessToken } from "@/utils/tokens";
+import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 export interface UpdateStudentDto {
@@ -85,6 +86,69 @@ export async function updateStudentAction(
     });
 
     const json = await response.json();
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...json,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Lỗi máy chủ",
+      statusCode: 500,
+    };
+  }
+}
+
+export async function getSelfiesAction(studentId: string) {
+  try {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(`${BASE_URL}/students/${studentId}/faces`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      next: {
+        tags: ["faces"],
+      },
+    });
+
+    const json = await response.json();
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...json,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Lỗi máy chủ",
+      statusCode: 500,
+    };
+  }
+}
+
+export async function deleteSelfieAction(studentId: string, selfieId: string) {
+  try {
+    const accessToken = await getAccessToken();
+
+    const response = await fetch(
+      `${BASE_URL}/students/${studentId}/faces/${selfieId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const json = await response.json();
+    if (response.ok) {
+      revalidateTag("faces");
+    }
     return {
       success: response.ok,
       statusCode: response.status,

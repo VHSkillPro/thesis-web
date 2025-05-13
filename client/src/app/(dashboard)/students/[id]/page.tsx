@@ -20,6 +20,7 @@ import Loading from "@/app/loading";
 import { useNotification } from "@/context/NotificationContext";
 import { EditOutlined, RollbackOutlined } from "@ant-design/icons";
 import StudentCard from "@/components/(dashboard)/students/detail/StudentCard";
+import StudentSelfies from "@/components/(dashboard)/students/detail/StudentSelfies";
 
 interface StudentFormDto {
   username: string;
@@ -215,6 +216,8 @@ export default function StudentDetailPage() {
           </Button>
         </Form.Item>
       </Form>
+      <Divider></Divider>
+      <StudentSelfies id={id} />
     </>
   );
 }
