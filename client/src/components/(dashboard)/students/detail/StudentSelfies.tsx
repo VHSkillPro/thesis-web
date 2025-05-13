@@ -1,9 +1,10 @@
-"use client";
-import { getSelfiesAction } from "@/app/(dashboard)/students/[id]/action";
-import { useNotification } from "@/context/NotificationContext";
+import { useEffect, useState } from "react";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Button, Image, Popconfirm, Table, Typography } from "antd";
-import { useEffect, useState } from "react";
+
+import AddStudentSelfie from "./AddStudentSelfie";
+import { getSelfiesAction } from "@/app/(dashboard)/students/[id]/action";
+import { useNotification } from "@/context/NotificationContext";
 
 interface StudentSelfiesProps {
   id: string;
@@ -52,7 +53,7 @@ export default function StudentSelfies(props: StudentSelfiesProps) {
       title: "Ảnh chân dung",
       dataIndex: "selfieUri",
       key: "selfieUri",
-      render: (text: string) => <Image src={text} height={150} />,
+      render: (text: string) => <Image src={text} height={100} />,
     },
     {
       title: (
@@ -91,6 +92,7 @@ export default function StudentSelfies(props: StudentSelfiesProps) {
   return (
     <>
       <Typography.Title level={2}>Danh sách ảnh chân dung</Typography.Title>
+      <AddStudentSelfie id={props.id} onChange={getSelfies} />
       <Table
         style={{ marginTop: 16 }}
         dataSource={selfies}

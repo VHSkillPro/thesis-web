@@ -162,3 +162,36 @@ export async function deleteSelfieAction(studentId: string, selfieId: string) {
     };
   }
 }
+
+export async function addSelfieAction(studentId: string, selfie: any) {
+  try {
+    const accessToken = await getAccessToken();
+
+    const body = new FormData();
+    body.append("selfie", selfie.originFileObj);
+
+    const response = await fetch(`${BASE_URL}/students/${studentId}/faces`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: body,
+    });
+
+    const json = await response.json();
+    if (response.ok) {
+      revalidateTag("faces");
+    }
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      ...json,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Lỗi máy chủ",
+      statusCode: 500,
+    };
+  }
+}
