@@ -153,7 +153,7 @@ export default function Page() {
             onClick={() => router.push(`/students/${record.username}`)}
           >
             <EditOutlined></EditOutlined>
-            Chỉnh sửa
+            Chi tiết
           </Button>
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa sinh viên này không?"

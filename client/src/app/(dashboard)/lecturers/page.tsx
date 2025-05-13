@@ -149,7 +149,7 @@ export default function LecturersPage() {
             onClick={() => router.push(`/lecturers/${record.username}`)}
           >
             <EditOutlined />
-            Chỉnh sửa
+            Chi tiết
           </Button>
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa giảng viên này không?"

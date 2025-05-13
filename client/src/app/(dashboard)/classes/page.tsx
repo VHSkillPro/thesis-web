@@ -132,7 +132,7 @@ export default function ClassesPage() {
             onClick={() => router.push(`/classes/${record.id}`)}
           >
             <EditOutlined />
-            Chỉnh sửa
+            Chi tiết
           </Button>
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa lớp này không?"
