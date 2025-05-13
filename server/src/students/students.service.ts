@@ -18,12 +18,14 @@ import { Face } from '../faces/faces.entity';
 import StudentsMessage from './students.message';
 import { connectionSource } from 'src/config/typeorm';
 import { UsersService } from '../users/users.service';
+import { FacesService } from 'src/faces/faces.service';
 
 @Injectable()
 export class StudentsService {
   constructor(
     @InjectRepository(Student) private studentsRepository: Repository<Student>,
     private usersService: UsersService,
+    private facesService: FacesService,
   ) {}
 
   /**
@@ -192,6 +194,13 @@ export class StudentsService {
         if (newStudent.cardPath) {
           removeFile(newStudent.cardPath);
         }
+
+        // Remove all faces associated with the student
+        const faces = await this.facesService.findAll(username);
+        for (const face of faces) {
+          await this.facesService.delete(username, face.id);
+        }
+
         newStudent.cardPath = card.path;
       }
 
