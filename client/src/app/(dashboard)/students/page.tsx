@@ -190,13 +190,16 @@ export default function Page() {
         <Typography.Title>Danh sách sinh viên</Typography.Title>
       </Row>
       <Row>
-        <Col>
+        <Col span={20}>
           <StudentFilterComponent
             filter={studentsFilter}
             setFilter={setStudentsFilter}
           ></StudentFilterComponent>
         </Col>
-        <Col style={{ marginLeft: "auto", display: "flex", alignItems: "end" }}>
+        <Col
+          style={{ display: "flex", alignItems: "end", justifyContent: "end" }}
+          span={4}
+        >
           <Button
             color="primary"
             variant="solid"
