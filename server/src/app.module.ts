@@ -9,6 +9,7 @@ import { StudentsModule } from './students/students.module';
 import { FacesModule } from './faces/faces.module';
 import { ClassesModule } from './classes/classes.module';
 import { StudentsClassesModule } from './students_classes/students_classes.module';
+import { FindStudentModule } from './find_student/find_student.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StudentsClassesModule } from './students_classes/students_classes.modul
     FacesModule,
     ClassesModule,
     StudentsClassesModule,
+    FindStudentModule,
   ],
   providers: [],
 })
