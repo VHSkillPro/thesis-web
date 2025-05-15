@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   NotFoundException,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,26 @@ export class FindStudentController {
   @Post()
   async findStudent(@Body() findStudentDto: FindStudentDto) {
     const student = await this.findStudentService.findStudent(findStudentDto);
+    if (!student) {
+      throw new NotFoundException({
+        message: FindStudentMessage.ERROR.NOTFOUND,
+      });
+    }
+
+    return new ShowResponseDto(FindStudentMessage.SUCCESS.FOUND, {
+      student,
+    });
+  }
+
+  @Post('/:classId')
+  async findStudentByClassId(
+    @Param('classId') classId: string,
+    @Body() findStudentDto: FindStudentDto,
+  ) {
+    const student = await this.findStudentService.findStudentByClassId(
+      classId,
+      findStudentDto,
+    );
     if (!student) {
       throw new NotFoundException({
         message: FindStudentMessage.ERROR.NOTFOUND,

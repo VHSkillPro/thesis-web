@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { FindStudentController } from './find_student.controller';
 import { FindStudentService } from './find_student.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Face } from 'src/faces/faces.entity';
+import { ClassesModule } from 'src/classes/classes.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Face])],
+  imports: [ClassesModule],
   controllers: [FindStudentController],
   providers: [FindStudentService],
 })
