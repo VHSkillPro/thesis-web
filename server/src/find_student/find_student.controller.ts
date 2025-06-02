@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  HttpCode,
   NotFoundException,
   Param,
   Post,
@@ -18,6 +19,7 @@ export class FindStudentController {
   constructor(private findStudentService: FindStudentService) {}
 
   @Post()
+  @HttpCode(200)
   async findStudent(@Body() findStudentDto: FindStudentDto) {
     const student = await this.findStudentService.findStudent(findStudentDto);
     if (!student) {
@@ -32,6 +34,7 @@ export class FindStudentController {
   }
 
   @Post('/:classId')
+  @HttpCode(200)
   async findStudentByClassId(
     @Param('classId') classId: string,
     @Body() findStudentDto: FindStudentDto,

@@ -66,13 +66,13 @@ services:
         build:
             context: ./client
             dockerfile: Dockerfile
-            target: dev
+            target: production
         ## Uncomment the following lines to enable hot reloading
-        volumes:
-            - ./client/:/app/
-            - ./client/package.json:/app/package.json
-            - ./client/package-lock.json:/app/package-lock.json
-            - client:/app/node_modules
+        # volumes:
+        #     - ./client/:/app/
+        #     - ./client/package.json:/app/package.json
+        #     - ./client/package-lock.json:/app/package-lock.json
+        #     - client:/app/node_modules
         #########################################################
         ports:
             - 80:3000

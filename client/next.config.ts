@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
     cacheHandler: require.resolve(
         "next/dist/server/lib/incremental-cache/file-system-cache.js"
     ),
-    allowedDevOrigins: ["nvhai090903.id.vn", "*.nvhai090903.id.vn"],
     output: "standalone",
 };
 
