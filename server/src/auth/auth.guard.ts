@@ -76,3 +76,34 @@ export class AuthGuard implements CanActivate {
     return type === 'Bearer' ? token : undefined;
   }
 }
+
+@Injectable()
+export class ApiKeyAuthGuard implements CanActivate {
+  constructor() {}
+
+  /**
+   * Determines whether the current request is authorized to proceed based on the presence and validity of an API key.
+   *
+   * @param context - The execution context containing details about the current request.
+   * @returns `true` if the request contains a valid API key; otherwise, throws an `UnauthorizedException`.
+   * @throws {UnauthorizedException} If the API key is missing or invalid.
+   */
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+
+    const apiKey = request.headers['x-api-key'];
+    if (!apiKey) {
+      throw new UnauthorizedException({
+        message: 'Vui lòng cung cấp API key',
+      });
+    }
+
+    if (apiKey !== process.env.FLUTTER_API_KEY) {
+      throw new UnauthorizedException({
+        message: 'API key không hợp lệ',
+      });
+    }
+
+    return true;
+  }
+}
