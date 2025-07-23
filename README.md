@@ -7,9 +7,15 @@
 - Cài đặt Docker Compose: [Hướng dẫn cài đặt Docker Compose](https://docs.docker.com/compose/install/)
 
 ### 1.2. Clone repository
+- Sử dụng lệnh sau để clone repository về máy:
 ```bash
 git clone https://github.com/VHSkillPro/thesis-web.git
 cd thesis-web
+```
+- Tải các models cần thiết:
+```bash
+git lfs install
+git lfs pull
 ```
 
 ### 1.3. Cấu hình file `.env` trong module server
