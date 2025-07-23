@@ -58,35 +58,34 @@ services:
         networks:
             - postgres
 
-    # Uncomment the following section to enable the production client
-    # client:
-    #     container_name: thesis-client
-    #     build:
-    #         context: ./client
-    #         dockerfile: Dockerfile
-    #         target: production
-    #     ports:
-    #         - 80:3000
-    #     networks:
-    #         - postgres
-
-    client-dev:
-        container_name: thesis-client-dev
+    client:
+        container_name: thesis-client
         build:
             context: ./client
             dockerfile: Dockerfile
-            target: dev
-        volumes:
-            - ./client/:/app/
-            - ./client/package.json:/app/package.json
-            - ./client/package-lock.json:/app/package-lock.json
-            - client:/app/node_modules
+            target: production
         ports:
             - 80:3000
-        environment:
-            WATCHPACK_POLLING: true
         networks:
             - postgres
+
+    # client-dev:
+    #     container_name: thesis-client-dev
+    #     build:
+    #         context: ./client
+    #         dockerfile: Dockerfile
+    #         target: dev
+    #     volumes:
+    #         - ./client/:/app/
+    #         - ./client/package.json:/app/package.json
+    #         - ./client/package-lock.json:/app/package-lock.json
+    #         - client:/app/node_modules
+    #     ports:
+    #         - 80:3000
+    #     environment:
+    #         WATCHPACK_POLLING: true
+    #     networks:
+    #         - postgres
 
     pgadmin:
         image: dpage/pgadmin4:9.5.0
