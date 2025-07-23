@@ -61,4 +61,4 @@ COPY --from=build /usr/server/dist ./dist
 EXPOSE 3000
 
 # Define the command to run the application.
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "./dist/main.js"]

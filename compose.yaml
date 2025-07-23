@@ -1,31 +1,43 @@
 services:
     database:
         image: pgvector/pgvector:pg17
-        container_name: postgres
+        container_name: thesis-postgres
         environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: password
             POSTGRES_DB: thesis
         volumes:
             - pgdata:/var/lib/postgresql/data
-        ports:
-            - 5432:5432
+        expose:
+            - 5432
         networks:
             - postgres
 
+    # server-dev:
+    #     container_name: thesis-server
+    #     build:
+    #         context: ./server
+    #         dockerfile: Dockerfile
+    #         target: development
+    #     volumes:
+    #         - ./server/:/usr/server/
+    #         - ./server/package.json:/usr/server/package.json
+    #         - ./server/package-lock.json:/usr/server/package-lock.json
+    #         - server:/usr/server/node_modules
+    #         - server-uploads:/usr/server/uploads
+    #     ports:
+    #         - 3000:3000
+    #     networks:
+    #         - postgres
+    #     depends_on:
+    #         - database
+
     server:
+        container_name: thesis-server
         build:
             context: ./server
             dockerfile: Dockerfile
-            target: development
-        image: server
-        container_name: server
-        volumes:
-            - ./server/:/usr/server/
-            - ./server/package.json:/usr/server/package.json
-            - ./server/package-lock.json:/usr/server/package-lock.json
-            - server:/usr/server/node_modules
-            - server-uploads:/usr/server/uploads
+            target: production
         ports:
             - 3000:3000
         networks:
@@ -33,23 +45,8 @@ services:
         depends_on:
             - database
 
-    pgadmin:
-        image: dpage/pgadmin4
-        container_name: pgadmin4
-        ports:
-            - "8888:80"
-        environment:
-            PGADMIN_DEFAULT_EMAIL: hailaconsutu558@gmail.com
-            PGADMIN_DEFAULT_PASSWORD: Discoveru1@
-        volumes:
-            - pgadmin-data:/var/lib/pgadmin
-        depends_on:
-            - database
-        networks:
-            - postgres
-
     face:
-        container_name: face
+        container_name: thesis-face
         build:
             context: ./face
             target: dev
@@ -61,23 +58,48 @@ services:
         networks:
             - postgres
 
-    client:
-        container_name: client
+    # Uncomment the following section to enable the production client
+    # client:
+    #     container_name: thesis-client
+    #     build:
+    #         context: ./client
+    #         dockerfile: Dockerfile
+    #         target: production
+    #     ports:
+    #         - 80:3000
+    #     networks:
+    #         - postgres
+
+    client-dev:
+        container_name: thesis-client-dev
         build:
             context: ./client
             dockerfile: Dockerfile
-            target: production
-        ## Uncomment the following lines to enable hot reloading
-        # volumes:
-        #     - ./client/:/app/
-        #     - ./client/package.json:/app/package.json
-        #     - ./client/package-lock.json:/app/package-lock.json
-        #     - client:/app/node_modules
-        #########################################################
+            target: dev
+        volumes:
+            - ./client/:/app/
+            - ./client/package.json:/app/package.json
+            - ./client/package-lock.json:/app/package-lock.json
+            - client:/app/node_modules
         ports:
             - 80:3000
         environment:
             WATCHPACK_POLLING: true
+        networks:
+            - postgres
+
+    pgadmin:
+        image: dpage/pgadmin4:9.5.0
+        container_name: thesis-pgadmin4
+        ports:
+            - "8888:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@pgadmin.com
+            PGADMIN_DEFAULT_PASSWORD: admin
+        volumes:
+            - pgadmin-data:/var/lib/pgadmin
+        depends_on:
+            - database
         networks:
             - postgres
 

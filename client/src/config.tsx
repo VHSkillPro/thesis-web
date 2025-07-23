@@ -1,1 +1,1 @@
-export const BASE_URL = "http://server:3000";
+export const BASE_URL = "http://thesis-server:3000";

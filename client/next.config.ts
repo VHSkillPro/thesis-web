@@ -5,7 +5,12 @@ const nextConfig: NextConfig = {
     /* config options here */
     experimental: {
         serverActions: {
-            bodySizeLimit: "10mb",
+            allowedOrigins: [
+                "nvhai090903.id.vn",
+                "*.nvhai090903.id.vn",
+                "localhost",
+            ],
+            bodySizeLimit: "3mb",
         },
     },
     cacheHandler: require.resolve(

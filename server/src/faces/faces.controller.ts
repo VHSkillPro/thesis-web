@@ -10,23 +10,19 @@ import {
   ParseFilePipe,
   Post,
   Request,
-  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FacesService } from './faces.service';
 import { StudentsService } from 'src/students/students.service';
-import StudentsMessage, {
-  StudentsMessageError,
-} from 'src/students/students.message';
+import StudentsMessage from 'src/students/students.message';
 import {
   BaseResponseDto,
   PaginationMetaDto,
   PaginationResponseDto,
   ShowResponseDto,
 } from 'src/dto/response.dto';
-import { FacesMessageError, FacesMessageSuccess } from './faces.message';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { RolesGuard } from 'src/role/role.guard';
 import { Roles } from 'src/role/role.decorator';
@@ -34,9 +30,6 @@ import { Role } from 'src/role/role.enum';
 import { AuthMessageError } from 'src/auth/auth.message';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { join } from 'path';
-import { createReadStream, readFileSync } from 'fs';
-import { Response } from 'express';
 import FacesMessage from './faces.message';
 
 @Controller('/students')

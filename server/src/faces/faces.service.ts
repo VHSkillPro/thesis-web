@@ -106,7 +106,7 @@ export class FacesService {
     form.append('pipeline', 'retinaface+arcface');
 
     const response$ = this.httpService
-      .post('http://face:5000/api/verification', form, {
+      .post('http://thesis-face:5000/api/verification', form, {
         headers: {
           ...form.getHeaders(),
         },
@@ -149,7 +149,7 @@ export class FacesService {
     form.append('pipeline', 'yunet+sface');
 
     const response$ = this.httpService
-      .post('http://face:5000/api/get_single', form, {
+      .post('http://thesis-face:5000/api/get_single', form, {
         headers: {
           ...form.getHeaders(),
         },
